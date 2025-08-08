@@ -1,0 +1,265 @@
+"use client";
+import { useState } from "react";
+import {
+  Copy,
+  CheckCircle,
+  CreditCard,
+  Smartphone,
+  DollarSign,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+
+interface PaymentInstructionsProps {
+  paymentMethod: string;
+  totalAmount: number;
+  onComplete: (reference: string) => void;
+}
+
+export default function PaymentInstructions({
+  paymentMethod,
+  totalAmount,
+  onComplete,
+}: PaymentInstructionsProps) {
+  const [paymentReference, setPaymentReference] = useState("");
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Información copiada al portapapeles");
+  };
+
+  const handleSubmitReference = () => {
+    if (!paymentReference.trim()) {
+      toast.error("Por favor ingresa la referencia de pago");
+      return;
+    }
+    onComplete(paymentReference);
+  };
+
+  const getPaymentIcon = () => {
+    switch (paymentMethod) {
+      case "zelle":
+        return <DollarSign className="h-6 w-6" />;
+      case "binance":
+        return <CreditCard className="h-6 w-6" />;
+      case "zinli":
+        return <Smartphone className="h-6 w-6" />;
+      case "pago-movil":
+        return <Smartphone className="h-6 w-6" />;
+      case "stripe":
+        return <CreditCard className="h-6 w-6" />;
+      default:
+        return <CreditCard className="h-6 w-6" />;
+    }
+  };
+
+  const getPaymentInstructions = () => {
+    switch (paymentMethod) {
+      case "zelle":
+        return {
+          title: "Pago con Zelle",
+          email: "pagos@autorifapro.com",
+          instructions: [
+            "Abre tu app bancaria o Zelle",
+            "Envía el pago al email: pagos@autorifapro.com",
+            'Usa como concepto: "Boletos AutoRifa"',
+            "Guarda la referencia de la transacción",
+            "Ingresa la referencia abajo para confirmar",
+          ],
+        };
+      case "binance":
+        return {
+          title: "Pago con Binance Pay",
+          wallet: "autorifapro@binance.com",
+          instructions: [
+            "Abre Binance Pay en tu app",
+            "Envía USDT a: autorifapro@binance.com",
+            "Usa la red BSC (BEP20) para menores comisiones",
+            "Guarda el hash de la transacción",
+            "Ingresa el hash abajo para confirmar",
+          ],
+        };
+      case "zinli":
+        return {
+          title: "Pago con Zinli",
+          phone: "+58 412-123-4567",
+          instructions: [
+            "Abre tu app Zinli",
+            "Envía el pago al teléfono: +58 412-123-4567",
+            'Usa como concepto: "AutoRifa Boletos"',
+            "Guarda la referencia de la transacción",
+            "Ingresa la referencia abajo para confirmar",
+          ],
+        };
+      case "pago-movil":
+        return {
+          title: "Pago Móvil",
+          bank: "Banco de Venezuela",
+          phone: "0412-1234567",
+          ci: "V-12345678",
+          instructions: [
+            "Marca *121# desde tu teléfono",
+            "Selecciona Pago Móvil",
+            "Banco: Banco de Venezuela",
+            "Teléfono: 0412-1234567",
+            "Cédula: V-12345678",
+            "Guarda la referencia de la transacción",
+          ],
+        };
+      default:
+        return {
+          title: "Procesando pago...",
+          instructions: ["Redirigiendo a la pasarela de pago segura..."],
+        };
+    }
+  };
+
+  const instructions = getPaymentInstructions();
+
+  return (
+    <div className="space-y-6">
+      {/* Payment Summary */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-blue-800">
+            {getPaymentIcon()}
+            <span>Resumen de Pago</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex justify-between">
+            <span>Monto a pagar:</span>
+            <span className="font-semibold">${totalAmount}</span>
+          </div>
+          <div className="flex justify-between text-lg font-bold border-t pt-3">
+            <span>Total a pagar:</span>
+            <span className="text-blue-600">${totalAmount}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Payment Instructions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{instructions.title}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Payment Details */}
+          {paymentMethod === "zelle" && (
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Email:</span>
+                <div className="flex items-center space-x-2">
+                  <span className="font-mono">{instructions.email}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(instructions.email!)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {paymentMethod === "binance" && (
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Wallet:</span>
+                <div className="flex items-center space-x-2">
+                  <span className="font-mono">{instructions.wallet}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(instructions.wallet!)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {paymentMethod === "pago-movil" && (
+            <div className="bg-slate-50 p-4 rounded-lg space-y-2">
+              <div className="flex justify-between">
+                <span className="font-medium">Banco:</span>
+                <span>{instructions.bank}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Teléfono:</span>
+                <span className="font-mono">{instructions.phone}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Cédula:</span>
+                <span className="font-mono">{instructions.ci}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Instructions List */}
+          <div>
+            <h4 className="font-medium mb-3">Instrucciones:</h4>
+            <ol className="space-y-2">
+              {instructions.instructions.map((instruction, index) => (
+                <li key={index} className="flex items-start space-x-2">
+                  <span className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <span className="text-slate-700">{instruction}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Reference Input */}
+          <div className="border-t pt-4">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Referencia de Pago *
+            </label>
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={paymentReference}
+                onChange={(e) => setPaymentReference(e.target.value)}
+                placeholder="Ingresa la referencia o hash de la transacción"
+                className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <Button
+                onClick={handleSubmitReference}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Confirmar
+              </Button>
+            </div>
+            <p className="text-sm text-slate-500 mt-1">
+              Una vez enviado el pago, ingresa la referencia para que podamos
+              verificar y confirmar tus boletos.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Important Notes */}
+      <Card className="border-yellow-200 bg-yellow-50">
+        <CardContent className="p-4">
+          <h4 className="font-medium text-yellow-800 mb-2">
+            Notas Importantes:
+          </h4>
+          <ul className="text-sm text-yellow-700 space-y-1">
+            <li>
+              • El pago debe realizarse por el monto exacto: ${totalAmount}
+            </li>
+            <li>• Tus boletos serán reservados por 30 minutos</li>
+            <li>• La confirmación puede tomar hasta 24 horas</li>
+            <li>• Guarda la referencia de pago para futuras consultas</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

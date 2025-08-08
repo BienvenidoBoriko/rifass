@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String?
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("user") @db.VarChar(50) // Added role field
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Raffle {
+  id                 Int      @id @default(autoincrement())
+  title              String   @db.VarChar(255)
+  description        String?  @db.Text
+  imageUrl           String?  @map("image_url") @db.VarChar(500)
+  galleryImages      Json?    @map("gallery_images")
+  pricePerTicket     Decimal  @map("price_per_ticket") @db.Decimal(10, 2)
+  totalTickets       Int      @map("total_tickets")
+  soldTickets        Int      @default(0) @map("sold_tickets")
+  startDate          DateTime @map("start_date")
+  endDate            DateTime @map("end_date")
+  drawDate           DateTime @map("draw_date")
+  status             Status   @default(active)
+  winnerTicketNumber Int?     @map("winner_ticket_number")
+  winnerName         String?  @map("winner_name") @db.VarChar(255)
+  winnerPhone        String?  @map("winner_phone") @db.VarChar(50)
+  winnerEmail        String?  @map("winner_email") @db.VarChar(255)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  tickets Ticket[]
+  winners Winner[]
+
+  @@map("raffles")
+}
+
+model Ticket {
+  id               Int           @id @default(autoincrement())
+  raffleId         Int           @map("raffle_id")
+  ticketNumber     Int           @map("ticket_number")
+  buyerName        String        @map("buyer_name") @db.VarChar(255)
+  buyerPhone       String        @map("buyer_phone") @db.VarChar(50)
+  buyerEmail       String        @map("buyer_email") @db.VarChar(255)
+  buyerCountry     String?       @map("buyer_country") @db.VarChar(100)
+  buyerCity        String?       @map("buyer_city") @db.VarChar(100)
+  paymentMethod    String        @map("payment_method") @db.VarChar(50)
+  paymentStatus    PaymentStatus @default(pending) @map("payment_status")
+  paymentReference String?       @map("payment_reference") @db.VarChar(255)
+  amountPaid       Decimal       @map("amount_paid") @db.Decimal(10, 2)
+  purchasedAt      DateTime      @default(now()) @map("purchased_at")
+  confirmedAt      DateTime?     @map("confirmed_at")
+
+  raffle Raffle @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+
+  @@unique([raffleId, ticketNumber])
+  @@index([buyerEmail])
+  @@map("tickets")
+}
+
+model Winner {
+  id           Int      @id @default(autoincrement())
+  raffleId     Int      @map("raffle_id")
+  winnerName   String   @map("winner_name") @db.VarChar(255)
+  winnerPhone  String?  @map("winner_phone") @db.VarChar(50)
+  winnerEmail  String   @map("winner_email") @db.VarChar(255)
+  ticketNumber Int      @map("ticket_number")
+  videoUrl     String?  @map("video_url") @db.VarChar(500)
+  claimed      Boolean  @default(false)
+  drawDate     DateTime @map("draw_date")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  raffle Raffle @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+
+  @@map("winners")
+}
+
+enum Status {
+  active
+  closed
+  drawn
+}
+
+enum PaymentStatus {
+  pending
+  confirmed
+  failed
+}
