@@ -31,6 +31,9 @@ export interface PendingPayment {
     buyerName: string;
     buyerEmail: string;
     paymentMethod: string;
+    paymentReference?: string;
+    paymentProof?: string;
+    paymentComment?: string;
     amountPaid: number;
     purchasedAt: string;
 }

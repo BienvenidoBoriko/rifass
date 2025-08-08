@@ -73,14 +73,12 @@ export default function AdminPayments() {
     switch (method) {
       case "zelle":
         return "bg-blue-100 text-blue-800 border-blue-200";
+      case "paypal":
+        return "bg-indigo-100 text-indigo-800 border-indigo-200";
       case "binance":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "zinli":
-        return "bg-purple-100 text-purple-800 border-purple-200";
       case "pago-movil":
         return "bg-green-100 text-green-800 border-green-200";
-      case "stripe":
-        return "bg-indigo-100 text-indigo-800 border-indigo-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
@@ -90,14 +88,12 @@ export default function AdminPayments() {
     switch (method) {
       case "zelle":
         return "Zelle";
+      case "paypal":
+        return "PayPal";
       case "binance":
         return "Binance Pay";
-      case "zinli":
-        return "Zinli";
       case "pago-movil":
         return "Pago Móvil";
-      case "stripe":
-        return "Tarjeta de Crédito";
       default:
         return method;
     }
@@ -281,34 +277,57 @@ export default function AdminPayments() {
                           </span>
                         </div>
                         <div>
+                          <span className="font-medium">Referencia:</span>{" "}
+                          {payment.paymentReference || "No proporcionada"}
+                        </div>
+                        <div>
                           <span className="font-medium">Fecha:</span>{" "}
                           {new Date(payment.purchasedAt).toLocaleString()}
                         </div>
-                        <div className="flex justify-end space-x-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => confirmPayment(payment.ticketId)}
-                            disabled={confirmingPayment === payment.ticketId}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            {confirmingPayment === payment.ticketId
-                              ? "Confirmando..."
-                              : "Confirmar"}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Rechazar
-                          </Button>
-                        </div>
                       </div>
+                      <div className="flex justify-end space-x-2 mt-3">
+                        {payment.paymentProof && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a
+                              href={payment.paymentProof}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver Comprobante
+                            </a>
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={() => confirmPayment(payment.ticketId)}
+                          disabled={confirmingPayment === payment.ticketId}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          {confirmingPayment === payment.ticketId
+                            ? "Confirmando..."
+                            : "Confirmar"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Rechazar
+                        </Button>
+                      </div>
+                      {payment.paymentComment && (
+                        <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                          <span className="font-medium text-slate-700">
+                            Comentario:
+                          </span>
+                          <p className="text-sm text-slate-600 mt-1">
+                            {payment.paymentComment}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

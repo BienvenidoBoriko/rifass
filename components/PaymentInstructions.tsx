@@ -6,16 +6,20 @@ import {
   CreditCard,
   Smartphone,
   DollarSign,
+  Upload,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { validateFile } from "@/lib/utils";
 
 interface PaymentInstructionsProps {
   paymentMethod: string;
   totalAmount: number;
-  onComplete: (reference: string) => void;
+  onComplete: (reference: string, proof?: File, comment?: string) => void;
 }
 
 export default function PaymentInstructions({
@@ -24,10 +28,37 @@ export default function PaymentInstructions({
   onComplete,
 }: PaymentInstructionsProps) {
   const [paymentReference, setPaymentReference] = useState("");
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
+  const [paymentComment, setPaymentComment] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Información copiada al portapapeles");
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        toast.error(validation.error || "Error al validar el archivo");
+        return;
+      }
+
+      setPaymentProof(file);
+      toast.success("Imagen de comprobante cargada exitosamente");
+    }
+  };
+
+  const removeFile = () => {
+    setPaymentProof(null);
+    const fileInput = document.getElementById(
+      "payment-proof"
+    ) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
   const handleSubmitReference = () => {
@@ -35,21 +66,25 @@ export default function PaymentInstructions({
       toast.error("Por favor ingresa la referencia de pago");
       return;
     }
-    onComplete(paymentReference);
+
+    if (!paymentProof) {
+      toast.error("Por favor sube una imagen del comprobante de pago");
+      return;
+    }
+
+    onComplete(paymentReference, paymentProof, paymentComment);
   };
 
   const getPaymentIcon = () => {
     switch (paymentMethod) {
       case "zelle":
         return <DollarSign className="h-6 w-6" />;
+      case "paypal":
+        return <CreditCard className="h-6 w-6" />;
       case "binance":
         return <CreditCard className="h-6 w-6" />;
-      case "zinli":
-        return <Smartphone className="h-6 w-6" />;
       case "pago-movil":
         return <Smartphone className="h-6 w-6" />;
-      case "stripe":
-        return <CreditCard className="h-6 w-6" />;
       default:
         return <CreditCard className="h-6 w-6" />;
     }
@@ -60,52 +95,68 @@ export default function PaymentInstructions({
       case "zelle":
         return {
           title: "Pago con Zelle",
-          email: "pagos@autorifapro.com",
+          email: process.env.NEXT_PUBLIC_ZELLE_EMAIL || "pagos@autorifapro.com",
           instructions: [
             "Abre tu app bancaria o Zelle",
-            "Envía el pago al email: pagos@autorifapro.com",
+            `Envía el pago al email: ${
+              process.env.NEXT_PUBLIC_ZELLE_EMAIL || "pagos@autorifapro.com"
+            }`,
             'Usa como concepto: "Boletos AutoRifa"',
             "Guarda la referencia de la transacción",
+            "Sube una imagen del comprobante de pago",
+            "Ingresa la referencia abajo para confirmar",
+          ],
+        };
+      case "paypal":
+        return {
+          title: "Pago con PayPal",
+          email:
+            process.env.NEXT_PUBLIC_PAYPAL_EMAIL || "pagos@autorifapro.com",
+          instructions: [
+            "Abre PayPal en tu navegador o app",
+            `Envía el pago al email: ${
+              process.env.NEXT_PUBLIC_PAYPAL_EMAIL || "pagos@autorifapro.com"
+            }`,
+            'Usa como concepto: "Boletos AutoRifa"',
+            "Guarda la referencia de la transacción",
+            "Sube una imagen del comprobante de pago",
             "Ingresa la referencia abajo para confirmar",
           ],
         };
       case "binance":
         return {
           title: "Pago con Binance Pay",
-          wallet: "autorifapro@binance.com",
+          wallet:
+            process.env.NEXT_PUBLIC_BINANCE_EMAIL || "autorifapro@binance.com",
           instructions: [
             "Abre Binance Pay en tu app",
-            "Envía USDT a: autorifapro@binance.com",
+            `Envía USDT a: ${
+              process.env.NEXT_PUBLIC_BINANCE_EMAIL || "autorifapro@binance.com"
+            }`,
             "Usa la red BSC (BEP20) para menores comisiones",
             "Guarda el hash de la transacción",
+            "Sube una imagen del comprobante de pago",
             "Ingresa el hash abajo para confirmar",
-          ],
-        };
-      case "zinli":
-        return {
-          title: "Pago con Zinli",
-          phone: "+58 412-123-4567",
-          instructions: [
-            "Abre tu app Zinli",
-            "Envía el pago al teléfono: +58 412-123-4567",
-            'Usa como concepto: "AutoRifa Boletos"',
-            "Guarda la referencia de la transacción",
-            "Ingresa la referencia abajo para confirmar",
           ],
         };
       case "pago-movil":
         return {
           title: "Pago Móvil",
-          bank: "Banco de Venezuela",
-          phone: "0412-1234567",
-          ci: "V-12345678",
+          bank: process.env.NEXT_PUBLIC_PAGO_MOVIL_BANK || "Banco de Venezuela",
+          phone: process.env.NEXT_PUBLIC_PAGO_MOVIL_PHONE || "0412-1234567",
+          ci: process.env.NEXT_PUBLIC_PAGO_MOVIL_CI || "V-12345678",
           instructions: [
             "Marca *121# desde tu teléfono",
             "Selecciona Pago Móvil",
-            "Banco: Banco de Venezuela",
-            "Teléfono: 0412-1234567",
-            "Cédula: V-12345678",
+            `Banco: ${
+              process.env.NEXT_PUBLIC_PAGO_MOVIL_BANK || "Banco de Venezuela"
+            }`,
+            `Teléfono: ${
+              process.env.NEXT_PUBLIC_PAGO_MOVIL_PHONE || "0412-1234567"
+            }`,
+            `Cédula: ${process.env.NEXT_PUBLIC_PAGO_MOVIL_CI || "V-12345678"}`,
             "Guarda la referencia de la transacción",
+            "Sube una imagen del comprobante de pago",
           ],
         };
       default:
@@ -148,6 +199,24 @@ export default function PaymentInstructions({
         <CardContent className="space-y-4">
           {/* Payment Details */}
           {paymentMethod === "zelle" && (
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Email:</span>
+                <div className="flex items-center space-x-2">
+                  <span className="font-mono">{instructions.email}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(instructions.email!)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {paymentMethod === "paypal" && (
             <div className="bg-slate-50 p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="font-medium">Email:</span>
@@ -215,6 +284,69 @@ export default function PaymentInstructions({
             </ol>
           </div>
 
+          {/* Payment Proof Upload */}
+          <div className="border-t pt-4">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Comprobante de Pago *
+            </label>
+            <div className="space-y-2">
+              <input
+                id="payment-proof"
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <div className="flex items-center space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    document.getElementById("payment-proof")?.click()
+                  }
+                  className="flex items-center space-x-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>Subir Comprobante</span>
+                </Button>
+                {paymentProof && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-green-600">
+                      ✓ {paymentProof.name}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={removeFile}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-slate-500">
+                Sube una imagen del comprobante de pago (JPG, PNG, WEBP - máximo
+                5MB)
+              </p>
+            </div>
+          </div>
+
+          {/* Payment Comment */}
+          <div className="border-t pt-4">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Comentario (opcional)
+            </label>
+            <Textarea
+              value={paymentComment}
+              onChange={(e) => setPaymentComment(e.target.value)}
+              placeholder="Agrega algún comentario o información adicional sobre tu pago..."
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
           {/* Reference Input */}
           <div className="border-t pt-4">
             <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -230,15 +362,16 @@ export default function PaymentInstructions({
               />
               <Button
                 onClick={handleSubmitReference}
-                className="bg-green-600 hover:bg-green-700"
+                disabled={!paymentReference.trim() || !paymentProof}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
                 Confirmar
               </Button>
             </div>
             <p className="text-sm text-slate-500 mt-1">
-              Una vez enviado el pago, ingresa la referencia para que podamos
-              verificar y confirmar tus boletos.
+              Una vez enviado el pago, ingresa la referencia y sube el
+              comprobante para que podamos verificar y confirmar tus boletos.
             </p>
           </div>
         </CardContent>
@@ -257,6 +390,7 @@ export default function PaymentInstructions({
             <li>• Tus boletos serán reservados por 30 minutos</li>
             <li>• La confirmación puede tomar hasta 24 horas</li>
             <li>• Guarda la referencia de pago para futuras consultas</li>
+            <li>• Es obligatorio subir una imagen del comprobante de pago</li>
           </ul>
         </CardContent>
       </Card>

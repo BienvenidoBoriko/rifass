@@ -7,7 +7,7 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "postinstall": "prisma generate && prisma migrate deploy && prisma db seed",
+    "postinstall": "prisma generate",
     "create-admin": "ts-node --compiler-options {\"module\":\"CommonJS\"} scripts/create-admin.ts"
   },
   "prisma": {
@@ -45,6 +45,7 @@
     "@radix-ui/react-toggle": "1.1.1",
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
+    "@types/nodemailer": "^6.4.17",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "latest",
     "class-variance-authority": "^0.7.1",

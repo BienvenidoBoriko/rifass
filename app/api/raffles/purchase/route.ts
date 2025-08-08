@@ -6,6 +6,7 @@ import type {
 } from "@/lib/types";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { emailService } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   // Check authentication
@@ -16,13 +17,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: PurchaseTicketsRequest = await request.json();
-    const { raffleId, ticketNumbers, paymentMethod, paymentReference } = body;
+    const { raffleId, ticketNumbers, paymentMethod, paymentReference, paymentProof, paymentComment } = body;
 
     // Get raffle details
     const raffle = await prisma.raffle.findUnique({
       where: { id: raffleId },
       select: {
         id: true,
+        title: true,
         pricePerTicket: true,
         status: true,
         endDate: true,
@@ -80,11 +82,49 @@ export async function POST(request: NextRequest) {
           buyerCity: "",
           paymentMethod,
           paymentReference,
+          paymentProof,
+          paymentComment,
           amountPaid: totalAmount,
         },
       });
 
       ticketIds.push(ticket.id);
+    }
+
+    // Send email notification to user
+    try {
+      await emailService.sendTicketPurchaseConfirmation({
+        buyerName: session.user.name || "",
+        buyerEmail: session.user.email,
+        raffleTitle: raffle.title,
+        ticketNumbers,
+        totalAmount,
+        paymentMethod,
+      });
+    } catch (emailError) {
+      console.error("Error sending email notification:", emailError);
+      // Don't fail the purchase if email fails
+    }
+
+    // Send admin notification
+    try {
+      await emailService.sendAdminNotification(
+        "Nueva Compra de Boletos",
+        `
+        <h3>Nueva compra realizada:</h3>
+        <ul>
+          <li><strong>Usuario:</strong> ${session.user.name} (${session.user.email})</li>
+          <li><strong>Rifa:</strong> ${raffle.title}</li>
+          <li><strong>Boletos:</strong> ${ticketNumbers.map(num => num.toString().padStart(4, '0')).join(', ')}</li>
+          <li><strong>Método de pago:</strong> ${paymentMethod}</li>
+          <li><strong>Total:</strong> $${totalAmount}</li>
+          <li><strong>Referencia:</strong> ${paymentReference || 'No proporcionada'}</li>
+        </ul>
+        `
+      );
+    } catch (adminEmailError) {
+      console.error("Error sending admin notification:", adminEmailError);
+      // Don't fail the purchase if admin email fails
     }
 
     const response: PurchaseTicketsResponse = {

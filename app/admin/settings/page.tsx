@@ -33,19 +33,20 @@ export default function AdminSettings() {
 
   const [settings, setSettings] = useState({
     // General Settings
-    siteName: "AutoRifa Pro",
-    siteDescription: "La plataforma más segura para rifas de vehículos",
-    contactEmail: "info@autorifapro.com",
-    supportPhone: "+1 (555) 123-4567",
+    siteName: "AutoRifaPro",
+    siteDescription: "Plataforma de rifas automotrices",
+    contactEmail: "contacto@autorifapro.com",
+    contactPhone: "+1-234-567-8900",
+    timezone: "America/Caracas",
+    language: "es",
 
     // Payment Settings
-    zelleEmail: "pagos@autorifapro.com",
-    binanceWallet: "autorifapro@binance.com",
-    zinliPhone: "+58 412-123-4567",
-    pagoMovilBank: "Banco de Venezuela",
-    pagoMovilPhone: "0412-1234567",
-    pagoMovilCI: "V-12345678",
-    stripeApiKey: "sk_test_...",
+    zelleEmail: process.env.ZELLE_EMAIL || "pagos@autorifapro.com",
+    paypalEmail: process.env.PAYPAL_EMAIL || "pagos@autorifapro.com",
+    binanceEmail: process.env.BINANCE_EMAIL || "autorifapro@binance.com",
+    pagoMovilPhone: process.env.PAGO_MOVIL_PHONE || "0412-1234567",
+    pagoMovilCI: process.env.PAGO_MOVIL_CI || "V-12345678",
+    pagoMovilBank: process.env.PAGO_MOVIL_BANK || "Banco de Venezuela",
 
     // Notification Settings
     emailNotifications: true,
@@ -148,9 +149,9 @@ export default function AdminSettings() {
                   <Label htmlFor="supportPhone">Teléfono de Soporte</Label>
                   <Input
                     id="supportPhone"
-                    value={settings.supportPhone}
+                    value={settings.contactPhone}
                     onChange={(e) =>
-                      handleInputChange("supportPhone", e.target.value)
+                      handleInputChange("contactPhone", e.target.value)
                     }
                   />
                 </div>
@@ -240,50 +241,26 @@ export default function AdminSettings() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="binanceWallet">Wallet de Binance</Label>
+                  <Label htmlFor="paypalEmail">Email de PayPal</Label>
                   <Input
-                    id="binanceWallet"
-                    value={settings.binanceWallet}
+                    id="paypalEmail"
+                    type="email"
+                    value={settings.paypalEmail}
                     onChange={(e) =>
-                      handleInputChange("binanceWallet", e.target.value)
+                      handleInputChange("paypalEmail", e.target.value)
                     }
                   />
                 </div>
                 <div>
-                  <Label htmlFor="zinliPhone">Teléfono Zinli</Label>
+                  <Label htmlFor="binanceEmail">Email de Binance</Label>
                   <Input
-                    id="zinliPhone"
-                    value={settings.zinliPhone}
+                    id="binanceEmail"
+                    type="email"
+                    value={settings.binanceEmail}
                     onChange={(e) =>
-                      handleInputChange("zinliPhone", e.target.value)
+                      handleInputChange("binanceEmail", e.target.value)
                     }
                   />
-                </div>
-                <div>
-                  <Label htmlFor="stripeApiKey">Stripe API Key</Label>
-                  <div className="relative">
-                    <Input
-                      id="stripeApiKey"
-                      type={showApiKey ? "text" : "password"}
-                      value={settings.stripeApiKey}
-                      onChange={(e) =>
-                        handleInputChange("stripeApiKey", e.target.value)
-                      }
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowApiKey(!showApiKey)}
-                    >
-                      {showApiKey ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
                 </div>
               </CardContent>
             </Card>

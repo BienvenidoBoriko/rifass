@@ -260,7 +260,7 @@ export default function AdminReports() {
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Stripe</span>
+                <span className="text-sm text-slate-600">PayPal</span>
                 <div className="flex items-center space-x-2">
                   <div className="w-20 bg-slate-200 rounded-full h-2">
                     <div className="bg-purple-600 h-2 rounded-full" style={{ width: '15%' }}></div>

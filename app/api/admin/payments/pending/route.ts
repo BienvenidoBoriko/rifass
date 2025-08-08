@@ -20,6 +20,9 @@ export async function GET() {
       buyerName: payment.buyerName,
       buyerEmail: payment.buyerEmail,
       paymentMethod: payment.paymentMethod,
+      paymentReference: payment.paymentReference,
+      paymentProof: payment.paymentProof,
+      paymentComment: payment.paymentComment,
       amountPaid: Number(payment.amountPaid),
       purchasedAt: payment.purchasedAt,
     }));

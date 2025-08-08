@@ -52,6 +52,7 @@ model User {
 }
 
 model VerificationToken {
+  id         String   @id @default(cuid())
   identifier String
   token      String   @unique
   expires    DateTime
@@ -97,6 +98,8 @@ model Ticket {
   paymentMethod    String        @map("payment_method") @db.VarChar(50)
   paymentStatus    PaymentStatus @default(pending) @map("payment_status")
   paymentReference String?       @map("payment_reference") @db.VarChar(255)
+  paymentProof     String?       @map("payment_proof") @db.VarChar(500)
+  paymentComment   String?       @map("payment_comment") @db.Text
   amountPaid       Decimal       @map("amount_paid") @db.Decimal(10, 2)
   purchasedAt      DateTime      @default(now()) @map("purchased_at")
   confirmedAt      DateTime?     @map("confirmed_at")

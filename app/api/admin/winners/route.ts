@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { emailService } from "@/lib/email";
 
 // Assign winner
 export async function POST(request: NextRequest) {
@@ -33,7 +34,12 @@ export async function POST(request: NextRequest) {
 
         // Check if raffle exists
         const raffle = await prisma.raffle.findUnique({
-            where: { id: raffleId }
+            where: { id: raffleId },
+            select: {
+                id: true,
+                title: true,
+                description: true,
+            }
         });
 
         if (!raffle) {
@@ -64,26 +70,73 @@ export async function POST(request: NextRequest) {
         if (!ticket) {
             return NextResponse.json(
                 { error: "Ticket not found or not confirmed" },
-                { status: 400 }
+                { status: 404 }
             );
         }
 
+        // Create winner
         const winner = await prisma.winner.create({
             data: {
                 raffleId,
                 winnerName,
                 winnerEmail,
-                winnerPhone: winnerPhone || null,
+                winnerPhone,
                 ticketNumber,
-                videoUrl: videoUrl || null,
+                videoUrl,
                 claimed: claimed || false,
                 drawDate: new Date()
             }
         });
 
+        // Update raffle with winner information
+        await prisma.raffle.update({
+            where: { id: raffleId },
+            data: {
+                status: 'drawn',
+                winnerTicketNumber: ticketNumber,
+                winnerName,
+                winnerPhone,
+                winnerEmail
+            }
+        });
+
+        // Send email notification to winner
+        try {
+            await emailService.sendWinnerNotification({
+                winnerName,
+                winnerEmail,
+                raffleTitle: raffle.title,
+                ticketNumber,
+                prize: raffle.description || raffle.title,
+            });
+        } catch (emailError) {
+            console.error("Error sending winner notification email:", emailError);
+            // Don't fail the winner assignment if email fails
+        }
+
+        // Send admin notification
+        try {
+            await emailService.sendAdminNotification(
+                "Ganador Asignado",
+                `
+                <h3>Ganador asignado:</h3>
+                <ul>
+                    <li><strong>Rifa:</strong> ${raffle.title}</li>
+                    <li><strong>Ganador:</strong> ${winnerName} (${winnerEmail})</li>
+                    <li><strong>Boleto ganador:</strong> #${ticketNumber.toString().padStart(4, '0')}</li>
+                    <li><strong>Teléfono:</strong> ${winnerPhone || 'No proporcionado'}</li>
+                    <li><strong>Fecha del sorteo:</strong> ${new Date().toLocaleDateString()}</li>
+                </ul>
+                `
+            );
+        } catch (adminEmailError) {
+            console.error("Error sending admin notification:", adminEmailError);
+            // Don't fail the winner assignment if admin email fails
+        }
+
         return NextResponse.json({ success: true, winner });
     } catch (error) {
-        console.error("Assign winner error:", error);
+        console.error("Error assigning winner:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }

@@ -28,6 +28,7 @@ import LoginModal from "@/components/LoginModal";
 import { useRaffle, useAvailableTickets } from "@/hooks/use-raffles";
 import { usePurchaseTickets } from "@/hooks/usePurchaseTickets";
 import { useSession } from "next-auth/react";
+import { fileToBase64 } from "@/lib/utils";
 
 export default function RaffleDetails() {
   const params = useParams();
@@ -81,9 +82,55 @@ export default function RaffleDetails() {
     }
   };
 
-  const handlePaymentComplete = (reference: string) => {
-    toast.success("Tu pago ha sido confirmado. Tus boletos están activos.");
-    setShowPayment(false);
+  const handlePaymentComplete = async (
+    reference: string,
+    proof?: File,
+    comment?: string
+  ) => {
+    if (!session?.user) {
+      toast.error("Debes iniciar sesión para completar el pago");
+      return;
+    }
+
+    try {
+      // Convert file to base64 if provided
+      let proofBase64 = undefined;
+      if (proof) {
+        proofBase64 = await fileToBase64(proof);
+      }
+
+      const response = await fetch("/api/raffles/purchase", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          raffleId,
+          ticketNumbers: selectedTickets,
+          paymentMethod,
+          paymentReference: reference,
+          paymentProof: proofBase64,
+          paymentComment: comment,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al procesar el pago");
+      }
+
+      toast.success(
+        "Tu pago ha sido enviado. Recibirás una confirmación por email."
+      );
+      setShowPayment(false);
+      setSelectedTickets([]);
+      setPaymentMethod("");
+    } catch (error) {
+      console.error("Error completing payment:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Error al procesar el pago"
+      );
+    }
   };
 
   if (raffleLoading) {
@@ -243,8 +290,8 @@ export default function RaffleDetails() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="zelle">Zelle</SelectItem>
-                        <SelectItem value="stripe">Stripe</SelectItem>
-                        <SelectItem value="zinli">Zinli</SelectItem>
+                        <SelectItem value="paypal">PayPal</SelectItem>
+                        <SelectItem value="binance">Binance Pay</SelectItem>
                         <SelectItem value="pago-movil">Pago Móvil</SelectItem>
                       </SelectContent>
                     </Select>

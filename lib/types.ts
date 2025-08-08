@@ -82,6 +82,8 @@ export interface PurchaseTicketsRequest {
   ticketNumbers: number[];
   paymentMethod: string;
   paymentReference?: string;
+  paymentProof?: string;
+  paymentComment?: string;
 }
 
 export interface PurchaseTicketsResponse {

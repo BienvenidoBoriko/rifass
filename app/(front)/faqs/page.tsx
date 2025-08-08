@@ -33,7 +33,7 @@ const faqData: FAQItem[] = [
     category: "Compra",
     question: "¿Qué métodos de pago aceptan?",
     answer:
-      "Aceptamos múltiples métodos de pago: Zelle, Binance Pay, Zinli, Pago Móvil, y tarjetas de crédito internacionales a través de Stripe. Todos los pagos son procesados de forma segura.",
+      "Aceptamos múltiples métodos de pago: Zelle, PayPal, Binance Pay y Pago Móvil. Todos los pagos son procesados de forma segura y requieren comprobante de pago para su validación.",
   },
   {
     category: "Compra",
