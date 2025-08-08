@@ -1,9 +1,7 @@
 {
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/api/tickets/user/route": "app/api/tickets/user/route.js",
-  "/(front)/my-tickets/page": "app/(front)/my-tickets/page.js",
   "/(front)/page": "app/(front)/page.js",
-  "/(front)/winners/page": "app/(front)/winners/page.js",
+  "/admin/payments/page": "app/admin/payments/page.js",
+  "/(front)/my-tickets/page": "app/(front)/my-tickets/page.js",
   "/(front)/raffles/page": "app/(front)/raffles/page.js",
-  "/admin/payments/page": "app/admin/payments/page.js"
+  "/(front)/winners/page": "app/(front)/winners/page.js"
 }
