@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/(front)/raffles/page": [
+    "/(front)/raffles/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(front)/raffles/page.js"
+      "static/chunks/app/(front)/raffles/[id]/page.js"
     ],
     "/(front)/layout": [
       "static/chunks/webpack.js",
@@ -16,15 +16,10 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/(front)/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(front)/page.js"
-    ],
-    "/(front)/raffles/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(front)/raffles/[id]/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

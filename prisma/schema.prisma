@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -23,10 +20,10 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId], map: "Account_userId_fkey")
 }
 
 model Session {
@@ -35,6 +32,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "Session_userId_fkey")
 }
 
 model User {
@@ -44,7 +43,7 @@ model User {
   password      String?
   emailVerified DateTime?
   image         String?
-  role          String    @default("user") @db.VarChar(50) // Added role field
+  role          String    @default("user") @db.VarChar(50)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
@@ -79,9 +78,8 @@ model Raffle {
   winnerEmail        String?  @map("winner_email") @db.VarChar(255)
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
-
-  tickets Ticket[]
-  winners Winner[]
+  tickets            Ticket[]
+  winners            Winner[]
 
   @@map("raffles")
 }
@@ -98,13 +96,12 @@ model Ticket {
   paymentMethod    String        @map("payment_method") @db.VarChar(50)
   paymentStatus    PaymentStatus @default(pending) @map("payment_status")
   paymentReference String?       @map("payment_reference") @db.VarChar(255)
-  paymentProof     String?       @map("payment_proof") @db.VarChar(500)
-  paymentComment   String?       @map("payment_comment") @db.Text
   amountPaid       Decimal       @map("amount_paid") @db.Decimal(10, 2)
   purchasedAt      DateTime      @default(now()) @map("purchased_at")
   confirmedAt      DateTime?     @map("confirmed_at")
-
-  raffle Raffle @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  paymentComment   String?       @map("payment_comment") @db.Text
+  paymentProof     String?       @map("payment_proof") @db.VarChar(1000)
+  raffle           Raffle        @relation(fields: [raffleId], references: [id], onDelete: Cascade)
 
   @@unique([raffleId, ticketNumber])
   @@index([buyerEmail])
@@ -122,9 +119,9 @@ model Winner {
   claimed      Boolean  @default(false)
   drawDate     DateTime @map("draw_date")
   createdAt    DateTime @default(now()) @map("created_at")
+  raffle       Raffle   @relation(fields: [raffleId], references: [id], onDelete: Cascade)
 
-  raffle Raffle @relation(fields: [raffleId], references: [id], onDelete: Cascade)
-
+  @@index([raffleId], map: "winners_raffle_id_fkey")
   @@map("winners")
 }
 

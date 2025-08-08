@@ -1,11 +1,6 @@
 {
   "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/api/tickets/user/route": "app/api/tickets/user/route.js",
-  "/api/raffles/active/route": "app/api/raffles/active/route.js",
-  "/api/winners/route": "app/api/winners/route.js",
-  "/api/raffles/[id]/route": "app/api/raffles/[id]/route.js",
+  "/api/upload/route": "app/api/upload/route.js",
   "/api/raffles/purchase/route": "app/api/raffles/purchase/route.js",
-  "/api/raffles/[id]/available-tickets/route": "app/api/raffles/[id]/available-tickets/route.js",
-  "/(front)/page": "app/(front)/page.js",
   "/(front)/raffles/[id]/page": "app/(front)/raffles/[id]/page.js"
 }

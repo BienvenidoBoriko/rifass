@@ -19,7 +19,7 @@ import { validateFile } from "@/lib/utils";
 interface PaymentInstructionsProps {
   paymentMethod: string;
   totalAmount: number;
-  onComplete: (reference: string, proof?: File, comment?: string) => void;
+  onComplete: (reference: string, proofUrl?: string, comment?: string) => void;
 }
 
 export default function PaymentInstructions({
@@ -61,7 +61,7 @@ export default function PaymentInstructions({
     }
   };
 
-  const handleSubmitReference = () => {
+  const handleSubmitReference = async () => {
     if (!paymentReference.trim()) {
       toast.error("Por favor ingresa la referencia de pago");
       return;
@@ -72,7 +72,35 @@ export default function PaymentInstructions({
       return;
     }
 
-    onComplete(paymentReference, paymentProof, paymentComment);
+    setIsUploading(true);
+
+    try {
+      // Upload the file first
+      const formData = new FormData();
+      formData.append("file", paymentProof);
+
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || "Error al subir el archivo");
+      }
+
+      const uploadResult = await uploadResponse.json();
+
+      // Call onComplete with the file URL
+      onComplete(paymentReference, uploadResult.url, paymentComment);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Error al subir el archivo"
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const getPaymentIcon = () => {
@@ -362,11 +390,13 @@ export default function PaymentInstructions({
               />
               <Button
                 onClick={handleSubmitReference}
-                disabled={!paymentReference.trim() || !paymentProof}
+                disabled={
+                  !paymentReference.trim() || !paymentProof || isUploading
+                }
                 className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
-                Confirmar
+                {isUploading ? "Subiendo..." : "Confirmar"}
               </Button>
             </div>
             <p className="text-sm text-slate-500 mt-1">

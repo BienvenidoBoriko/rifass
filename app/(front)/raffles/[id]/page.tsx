@@ -39,6 +39,12 @@ export default function RaffleDetails() {
   const [showPayment, setShowPayment] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("");
+  // Estado para almacenar los datos de la compra pendiente
+  const [pendingPurchase, setPendingPurchase] = useState<{
+    ticketNumbers: number[];
+    totalAmount: number;
+    paymentMethod: string;
+  } | null>(null);
 
   const id = params?.id as string;
   if (!id) {
@@ -67,24 +73,24 @@ export default function RaffleDetails() {
       return;
     }
 
-    const result = await purchaseTickets({
-      raffleId,
-      ticketNumbers: selectedTickets,
+    // Guardar los datos de la compra pendiente
+    const totalAmount = selectedTickets.length * (raffle?.pricePerTicket || 0);
+    setPendingPurchase({
+      ticketNumbers: [...selectedTickets],
+      totalAmount,
       paymentMethod,
     });
 
-    if (result) {
-      toast.success(
-        "Tus boletos han sido reservados. Completa el pago para confirmarlos."
-      );
-      setShowPayment(true);
-      setSelectedTickets([]);
-    }
+    // Mostrar instrucciones de pago sin crear tickets aún
+    setShowPayment(true);
+    toast.success(
+      "Completa el pago para confirmar tus boletos. Tienes 30 minutos para completar la transacción."
+    );
   };
 
   const handlePaymentComplete = async (
     reference: string,
-    proof?: File,
+    proofUrl?: string,
     comment?: string
   ) => {
     if (!session?.user) {
@@ -92,12 +98,20 @@ export default function RaffleDetails() {
       return;
     }
 
+    if (!pendingPurchase) {
+      toast.error("No hay compra pendiente");
+      return;
+    }
+
     try {
-      // Convert file to base64 if provided
-      let proofBase64 = undefined;
-      if (proof) {
-        proofBase64 = await fileToBase64(proof);
-      }
+      console.log("Enviando datos:", {
+        raffleId,
+        ticketNumbers: pendingPurchase.ticketNumbers,
+        paymentMethod: pendingPurchase.paymentMethod,
+        paymentReference: reference,
+        paymentProof: proofUrl,
+        paymentComment: comment,
+      });
 
       const response = await fetch("/api/raffles/purchase", {
         method: "POST",
@@ -106,10 +120,10 @@ export default function RaffleDetails() {
         },
         body: JSON.stringify({
           raffleId,
-          ticketNumbers: selectedTickets,
-          paymentMethod,
+          ticketNumbers: pendingPurchase.ticketNumbers,
+          paymentMethod: pendingPurchase.paymentMethod,
           paymentReference: reference,
-          paymentProof: proofBase64,
+          paymentProof: proofUrl,
           paymentComment: comment,
         }),
       });
@@ -119,11 +133,17 @@ export default function RaffleDetails() {
         throw new Error(errorData.error || "Error al procesar el pago");
       }
 
+      const result = await response.json();
+      console.log("Respuesta del servidor:", result);
+
       toast.success(
         "Tu pago ha sido enviado. Recibirás una confirmación por email."
       );
+
+      // Limpiar estados
       setShowPayment(false);
       setSelectedTickets([]);
+      setPendingPurchase(null);
       setPaymentMethod("");
     } catch (error) {
       console.error("Error completing payment:", error);
@@ -310,16 +330,20 @@ export default function RaffleDetails() {
                     disabled={purchaseLoading || selectedTickets.length === 0}
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
-                    {purchaseLoading ? "Procesando..." : "Comprar Boletos"}
+                    {purchaseLoading
+                      ? "Procesando..."
+                      : "Continuar con el Pago"}
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              <PaymentInstructions
-                onComplete={handlePaymentComplete}
-                totalAmount={selectedTickets.length * raffle.pricePerTicket}
-                paymentMethod={paymentMethod}
-              />
+              pendingPurchase && (
+                <PaymentInstructions
+                  onComplete={handlePaymentComplete}
+                  totalAmount={pendingPurchase.totalAmount}
+                  paymentMethod={pendingPurchase.paymentMethod}
+                />
+              )
             )}
           </div>
         </div>
