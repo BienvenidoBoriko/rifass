@@ -1,91 +1,91 @@
 import nodemailer from 'nodemailer';
 
 interface EmailConfig {
-    host: string;
-    port: number;
-    user: string;
-    password: string;
-    from: string;
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  from: string;
 }
 
 interface TicketPurchaseEmailData {
-    buyerName: string;
-    buyerEmail: string;
-    raffleTitle: string;
-    ticketNumbers: number[];
-    totalAmount: number;
-    paymentMethod: string;
+  buyerName: string;
+  buyerEmail: string;
+  raffleTitle: string;
+  ticketNumbers: number[];
+  totalAmount: number;
+  paymentMethod: string;
 }
 
 interface PaymentConfirmationEmailData {
-    buyerName: string;
-    buyerEmail: string;
-    raffleTitle: string;
-    ticketNumbers: number[];
-    totalAmount: number;
-    paymentMethod: string;
+  buyerName: string;
+  buyerEmail: string;
+  raffleTitle: string;
+  ticketNumbers: number[];
+  totalAmount: number;
+  paymentMethod: string;
 }
 
 interface WinnerEmailData {
-    winnerName: string;
-    winnerEmail: string;
-    raffleTitle: string;
-    ticketNumber: number;
-    prize: string;
+  winnerName: string;
+  winnerEmail: string;
+  raffleTitle: string;
+  ticketNumber: number;
+  prize: string;
 }
 
 class EmailService {
-    private transporter: nodemailer.Transporter | null = null;
+  private transporter: nodemailer.Transporter | null = null;
 
-    constructor() {
-        this.initializeTransporter();
+  constructor() {
+    this.initializeTransporter();
+  }
+
+  private initializeTransporter() {
+    const config: EmailConfig = {
+      host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_SERVER_PORT || '587'),
+      user: process.env.EMAIL_SERVER_USER || '',
+      password: process.env.EMAIL_SERVER_PASSWORD || '',
+      from: process.env.EMAIL_FROM || 'noreply@autorifapro.com',
+    };
+
+    if (config.user && config.password) {
+      this.transporter = nodemailer.createTransporter({
+        host: config.host,
+        port: config.port,
+        secure: config.port === 465,
+        auth: {
+          user: config.user,
+          pass: config.password,
+        },
+      });
+    }
+  }
+
+  private async sendEmail(to: string, subject: string, html: string) {
+    if (!this.transporter) {
+      console.warn('Email service not configured. Skipping email send.');
+      return false;
     }
 
-    private initializeTransporter() {
-        const config: EmailConfig = {
-            host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
-            port: parseInt(process.env.EMAIL_SERVER_PORT || '587'),
-            user: process.env.EMAIL_SERVER_USER || '',
-            password: process.env.EMAIL_SERVER_PASSWORD || '',
-            from: process.env.EMAIL_FROM || 'noreply@autorifapro.com',
-        };
-
-        if (config.user && config.password) {
-            this.transporter = nodemailer.createTransporter({
-                host: config.host,
-                port: config.port,
-                secure: config.port === 465,
-                auth: {
-                    user: config.user,
-                    pass: config.password,
-                },
-            });
-        }
+    try {
+      await this.transporter.sendMail({
+        from: process.env.EMAIL_FROM || 'noreply@autorifapro.com',
+        to,
+        subject,
+        html,
+      });
+      return true;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      return false;
     }
+  }
 
-    private async sendEmail(to: string, subject: string, html: string) {
-        if (!this.transporter) {
-            console.warn('Email service not configured. Skipping email send.');
-            return false;
-        }
-
-        try {
-            await this.transporter.sendMail({
-                from: process.env.EMAIL_FROM || 'noreply@autorifapro.com',
-                to,
-                subject,
-                html,
-            });
-            return true;
-        } catch (error) {
-            console.error('Error sending email:', error);
-            return false;
-        }
-    }
-
-    async sendTicketPurchaseConfirmation(data: TicketPurchaseEmailData) {
-        const subject = `Confirmación de Compra - ${data.raffleTitle}`;
-        const html = `
+  async sendTicketPurchaseConfirmation(data: TicketPurchaseEmailData) {
+    const subject = `Confirmación de Compra - ${data.raffleTitle}`;
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -96,7 +96,7 @@ class EmailService {
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="margin: 0; font-size: 24px;">¡Compra Confirmada!</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">AutoRifa Pro</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;"> GanaXDar</p>
           </div>
           
           <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
@@ -130,7 +130,7 @@ class EmailService {
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
               Si tienes alguna pregunta, no dudes en contactarnos.<br>
-              <strong>AutoRifa Pro</strong> - La plataforma más segura para rifas de vehículos
+              <strong> GanaXDar</strong> - La plataforma más segura para rifas de vehículos
             </p>
           </div>
         </div>
@@ -138,12 +138,12 @@ class EmailService {
       </html>
     `;
 
-        return this.sendEmail(data.buyerEmail, subject, html);
-    }
+    return this.sendEmail(data.buyerEmail, subject, html);
+  }
 
-    async sendPaymentConfirmation(data: PaymentConfirmationEmailData) {
-        const subject = `Pago Confirmado - ${data.raffleTitle}`;
-        const html = `
+  async sendPaymentConfirmation(data: PaymentConfirmationEmailData) {
+    const subject = `Pago Confirmado - ${data.raffleTitle}`;
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -154,7 +154,7 @@ class EmailService {
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="margin: 0; font-size: 24px;">¡Pago Confirmado!</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">AutoRifa Pro</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;"> GanaXDar</p>
           </div>
           
           <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
@@ -186,7 +186,7 @@ class EmailService {
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
               Si tienes alguna pregunta, no dudes en contactarnos.<br>
-              <strong>AutoRifa Pro</strong> - La plataforma más segura para rifas de vehículos
+              <strong> GanaXDar</strong> - La plataforma más segura para rifas de vehículos
             </p>
           </div>
         </div>
@@ -194,12 +194,12 @@ class EmailService {
       </html>
     `;
 
-        return this.sendEmail(data.buyerEmail, subject, html);
-    }
+    return this.sendEmail(data.buyerEmail, subject, html);
+  }
 
-    async sendWinnerNotification(data: WinnerEmailData) {
-        const subject = `¡Felicidades! Eres el Ganador - ${data.raffleTitle}`;
-        const html = `
+  async sendWinnerNotification(data: WinnerEmailData) {
+    const subject = `¡Felicidades! Eres el Ganador - ${data.raffleTitle}`;
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -239,8 +239,8 @@ class EmailService {
             
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
-              ¡Gracias por participar en AutoRifa Pro!<br>
-              <strong>AutoRifa Pro</strong> - La plataforma más segura para rifas de vehículos
+              ¡Gracias por participar en  GanaXDar!<br>
+              <strong> GanaXDar</strong> - La plataforma más segura para rifas de vehículos
             </p>
           </div>
         </div>
@@ -248,13 +248,13 @@ class EmailService {
       </html>
     `;
 
-        return this.sendEmail(data.winnerEmail, subject, html);
-    }
+    return this.sendEmail(data.winnerEmail, subject, html);
+  }
 
-    async sendAdminNotification(subject: string, message: string) {
-        const adminEmails = process.env.ADMIN_EMAILS?.split(',') || ['admin@autorifapro.com'];
+  async sendAdminNotification(subject: string, message: string) {
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',') || ['admin@autorifapro.com'];
 
-        const html = `
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -265,7 +265,7 @@ class EmailService {
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="margin: 0; font-size: 24px;">Notificación Administrativa</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">AutoRifa Pro</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;"> GanaXDar</p>
           </div>
           
           <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
@@ -276,7 +276,7 @@ class EmailService {
             
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
-              <strong>AutoRifa Pro</strong> - Panel de Administración
+              <strong> GanaXDar</strong> - Panel de Administración
             </p>
           </div>
         </div>
@@ -284,27 +284,27 @@ class EmailService {
       </html>
     `;
 
-        const results = await Promise.all(
-            adminEmails.map(email => this.sendEmail(email, `[Admin] ${subject}`, html))
-        );
+    const results = await Promise.all(
+      adminEmails.map(email => this.sendEmail(email, `[Admin] ${subject}`, html))
+    );
 
-        return results.every(result => result);
-    }
+    return results.every(result => result);
+  }
 
-    private getPaymentMethodText(method: string): string {
-        switch (method) {
-            case 'zelle':
-                return 'Zelle';
-            case 'paypal':
-                return 'PayPal';
-            case 'binance':
-                return 'Binance Pay';
-            case 'pago-movil':
-                return 'Pago Móvil';
-            default:
-                return method;
-        }
+  private getPaymentMethodText(method: string): string {
+    switch (method) {
+      case 'zelle':
+        return 'Zelle';
+      case 'paypal':
+        return 'PayPal';
+      case 'binance':
+        return 'Binance Pay';
+      case 'pago-movil':
+        return 'Pago Móvil';
+      default:
+        return method;
     }
+  }
 }
 
 export const emailService = new EmailService();

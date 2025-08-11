@@ -13,9 +13,9 @@ interface FAQItem {
 const faqData: FAQItem[] = [
   {
     category: "General",
-    question: "¿Cómo funciona AutoRifa Pro?",
+    question: "¿Cómo funciona  GanaXDar?",
     answer:
-      "AutoRifa Pro es una plataforma de rifas de vehículos donde puedes comprar boletos numerados para participar en sorteos. Cada rifa tiene un número limitado de boletos (0000-9999) y un premio específico. El sorteo se realiza en la fecha programada y el ganador se selecciona de forma aleatoria y transparente.",
+      " GanaXDar es una plataforma de rifas de vehículos donde puedes comprar boletos numerados para participar en sorteos. Cada rifa tiene un número limitado de boletos (0000-9999) y un premio específico. El sorteo se realiza en la fecha programada y el ganador se selecciona de forma aleatoria y transparente.",
   },
   {
     category: "General",
@@ -125,7 +125,7 @@ export default function FAQ() {
           Preguntas Frecuentes
         </h1>
         <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-          Encuentra respuestas a las preguntas más comunes sobre AutoRifa Pro
+          Encuentra respuestas a las preguntas más comunes sobre GanaXDar
         </p>
       </div>
 

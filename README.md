@@ -1,4 +1,4 @@
-# AutoRifa Pro - Sistema de Rifas
+# GanaXDar - Sistema de Rifas
 
 Un sistema completo de rifas de vehículos construido con Next.js, Prisma, y NextAuth.
 

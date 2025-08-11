@@ -200,7 +200,7 @@ export default function LoginPage() {
     <div className=" flex items-center justify-center z-50 p-4 my-10">
       <Card className="w-full max-w-md">
         <CardHeader className="relative">
-          <CardTitle className="text-center">Acceder a AutoRifa Pro</CardTitle>
+          <CardTitle className="text-center">Acceder a GanaXDar</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="space-y-4">

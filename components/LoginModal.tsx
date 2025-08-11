@@ -124,7 +124,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           >
             <X className="h-4 w-4" />
           </Button>
-          <CardTitle className="text-center">Acceder a AutoRifa Pro</CardTitle>
+          <CardTitle className="text-center">Acceder a GanaXDar</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="space-y-4">

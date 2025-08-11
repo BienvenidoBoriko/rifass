@@ -78,7 +78,7 @@ export default function AdminSidebar() {
             <Car className="h-6 w-6 text-white" />
           </div>
           <div>
-            <span className="text-white font-bold text-lg">AutoRifa Pro</span>
+            <span className="text-white font-bold text-lg"> GanaXDar</span>
             <p className="text-slate-400 text-xs">Panel Admin</p>
           </div>
         </Link>

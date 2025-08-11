@@ -132,7 +132,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-            ¿Por Qué Elegir AutoRifa Pro?
+            ¿Por Qué Elegir GanaXDar?
           </h2>
           <p className="text-xl text-slate-600 max-w-3xl mx-auto">
             Somos la plataforma más confiable y transparente para rifas de
@@ -262,7 +262,7 @@ export default function Home() {
             ¿Listo para Ganar?
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Únete a miles de participantes que ya confían en AutoRifa Pro. Tu
+            Únete a miles de participantes que ya confían en GanaXDar. Tu
             próximo auto te está esperando.
           </p>
           <Button

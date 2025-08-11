@@ -13,7 +13,7 @@ export default function Footer() {
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
                 <Car className="h-6 w-6 text-white" />
               </div>
-              <span className="text-xl font-bold">AutoRifa Pro</span>
+              <span className="text-xl font-bold"> GanaXDar</span>
             </div>
             <p className="text-slate-300 mb-4 max-w-md">
               La plataforma más segura y confiable para participar en rifas de
@@ -99,7 +99,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-400">
-          <p>&copy; 2024 AutoRifa Pro. Todos los derechos reservados.</p>
+          <p>&copy; 2024 GanaXDar. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>
