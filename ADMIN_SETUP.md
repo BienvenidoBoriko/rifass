@@ -19,7 +19,7 @@ npm run create-admin
 
 Esto creará un usuario con las siguientes credenciales:
 
-- **Email**: admin@autorifapro.com
+- **Email**: admin@ganaxdar.com
 - **Contraseña**: admin123
 - **Rol**: admin
 

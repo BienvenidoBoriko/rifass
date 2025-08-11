@@ -20,12 +20,16 @@ interface PaymentInstructionsProps {
   paymentMethod: string;
   totalAmount: number;
   onComplete: (reference: string, proofUrl?: string, comment?: string) => void;
+  isSubmitting?: boolean;
+  onCancel?: () => void;
 }
 
 export default function PaymentInstructions({
   paymentMethod,
   totalAmount,
   onComplete,
+  isSubmitting = false,
+  onCancel,
 }: PaymentInstructionsProps) {
   const [paymentReference, setPaymentReference] = useState("");
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
@@ -123,13 +127,13 @@ export default function PaymentInstructions({
       case "zelle":
         return {
           title: "Pago con Zelle",
-          email: process.env.NEXT_PUBLIC_ZELLE_EMAIL || "pagos@autorifapro.com",
+          email: process.env.NEXT_PUBLIC_ZELLE_EMAIL || "soporte@ganaxdar.com",
           instructions: [
             "Abre tu app bancaria o Zelle",
             `Envía el pago al email: ${
-              process.env.NEXT_PUBLIC_ZELLE_EMAIL || "pagos@autorifapro.com"
+              process.env.NEXT_PUBLIC_ZELLE_EMAIL || "soporte@ganaxdar.com"
             }`,
-            'Usa como concepto: "Boletos AutoRifa"',
+            'Usa como concepto: "Boletos Ganaxdar"',
             "Guarda la referencia de la transacción",
             "Sube una imagen del comprobante de pago",
             "Ingresa la referencia abajo para confirmar",
@@ -138,14 +142,13 @@ export default function PaymentInstructions({
       case "paypal":
         return {
           title: "Pago con PayPal",
-          email:
-            process.env.NEXT_PUBLIC_PAYPAL_EMAIL || "pagos@autorifapro.com",
+          email: process.env.NEXT_PUBLIC_PAYPAL_EMAIL || "soporte@ganaxdar.com",
           instructions: [
             "Abre PayPal en tu navegador o app",
             `Envía el pago al email: ${
-              process.env.NEXT_PUBLIC_PAYPAL_EMAIL || "pagos@autorifapro.com"
+              process.env.NEXT_PUBLIC_PAYPAL_EMAIL || "soporte@ganaxdar.com"
             }`,
-            'Usa como concepto: "Boletos AutoRifa"',
+            'Usa como concepto: "Boletos Ganaxdar"',
             "Guarda la referencia de la transacción",
             "Sube una imagen del comprobante de pago",
             "Ingresa la referencia abajo para confirmar",
@@ -155,11 +158,13 @@ export default function PaymentInstructions({
         return {
           title: "Pago con Binance Pay",
           wallet:
-            process.env.NEXT_PUBLIC_BINANCE_EMAIL || "autorifapro@binance.com",
+            process.env.NEXT_PUBLIC_BINANCE_EMAIL ||
+            "oldschool1208cr@gmail.com",
           instructions: [
             "Abre Binance Pay en tu app",
             `Envía USDT a: ${
-              process.env.NEXT_PUBLIC_BINANCE_EMAIL || "autorifapro@binance.com"
+              process.env.NEXT_PUBLIC_BINANCE_EMAIL ||
+              "oldschool1208cr@gmail.com"
             }`,
             "Usa la red BSC (BEP20) para menores comisiones",
             "Guarda el hash de la transacción",
@@ -170,19 +175,17 @@ export default function PaymentInstructions({
       case "pago-movil":
         return {
           title: "Pago Móvil",
-          bank: process.env.NEXT_PUBLIC_PAGO_MOVIL_BANK || "Banco de Venezuela",
-          phone: process.env.NEXT_PUBLIC_PAGO_MOVIL_PHONE || "0412-1234567",
-          ci: process.env.NEXT_PUBLIC_PAGO_MOVIL_CI || "V-12345678",
+          bank: process.env.NEXT_PUBLIC_PAGO_MOVIL_BANK || "Banesco",
+          phone: process.env.NEXT_PUBLIC_PAGO_MOVIL_PHONE || "04123738860",
+          ci: process.env.NEXT_PUBLIC_PAGO_MOVIL_CI || "V-27248689",
           instructions: [
             "Marca *121# desde tu teléfono",
             "Selecciona Pago Móvil",
-            `Banco: ${
-              process.env.NEXT_PUBLIC_PAGO_MOVIL_BANK || "Banco de Venezuela"
-            }`,
+            `Banco: ${process.env.NEXT_PUBLIC_PAGO_MOVIL_BANK || "Banesco"}`,
             `Teléfono: ${
-              process.env.NEXT_PUBLIC_PAGO_MOVIL_PHONE || "0412-1234567"
+              process.env.NEXT_PUBLIC_PAGO_MOVIL_PHONE || "04123738860"
             }`,
-            `Cédula: ${process.env.NEXT_PUBLIC_PAGO_MOVIL_CI || "V-12345678"}`,
+            `Cédula: ${process.env.NEXT_PUBLIC_PAGO_MOVIL_CI || "V-27248689"}`,
             "Guarda la referencia de la transacción",
             "Sube una imagen del comprobante de pago",
           ],
@@ -199,6 +202,24 @@ export default function PaymentInstructions({
 
   return (
     <div className="space-y-6">
+      {/* Header with Cancel Button */}
+      {onCancel && (
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-slate-900">
+            Instrucciones de Pago
+          </h2>
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+            className="text-red-600 hover:text-red-700 border-red-300"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Cancelar Compra
+          </Button>
+        </div>
+      )}
+
       {/* Payment Summary */}
       <Card className="border-blue-200 bg-blue-50">
         <CardHeader>
@@ -391,12 +412,19 @@ export default function PaymentInstructions({
               <Button
                 onClick={handleSubmitReference}
                 disabled={
-                  !paymentReference.trim() || !paymentProof || isUploading
+                  !paymentReference.trim() ||
+                  !paymentProof ||
+                  isUploading ||
+                  isSubmitting
                 }
                 className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
-                {isUploading ? "Subiendo..." : "Confirmar"}
+                {isUploading
+                  ? "Subiendo..."
+                  : isSubmitting
+                  ? "Procesando..."
+                  : "Confirmar"}
               </Button>
             </div>
             <p className="text-sm text-slate-500 mt-1">

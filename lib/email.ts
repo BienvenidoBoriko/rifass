@@ -39,7 +39,7 @@ class EmailService {
   private fromEmail: string;
 
   constructor() {
-    this.fromEmail = process.env.EMAIL_FROM || 'noreply@autorifapro.com';
+    this.fromEmail = process.env.EMAIL_FROM || 'noreply@ganaxdar.com';
     this.initializeTransporter();
   }
 
@@ -144,7 +144,7 @@ class EmailService {
   }
 
   private generateTicketPurchaseHTML(data: TicketPurchaseEmailData): string {
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://autorifapro.com';
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://ganaxdar.com';
 
     return `
       <!DOCTYPE html>
@@ -208,7 +208,7 @@ class EmailService {
   }
 
   private generatePaymentConfirmationHTML(data: PaymentConfirmationEmailData): string {
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://autorifapro.com';
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://ganaxdar.com';
 
     return `
       <!DOCTYPE html>
@@ -270,7 +270,7 @@ class EmailService {
   }
 
   private generateWinnerNotificationHTML(data: WinnerEmailData): string {
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://autorifapro.com';
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://ganaxdar.com';
 
     return `
       <!DOCTYPE html>
@@ -324,7 +324,7 @@ class EmailService {
   }
 
   async sendAdminNotification(subject: string, message: string): Promise<boolean> {
-    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || ['admin@autorifapro.com'];
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || ['admin@ganaxdar.com'];
 
     const html = `
       <!DOCTYPE html>

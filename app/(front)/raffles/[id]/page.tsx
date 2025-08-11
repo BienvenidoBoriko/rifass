@@ -1,6 +1,6 @@
 "use client";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   Users,
@@ -45,6 +45,8 @@ export default function RaffleDetails() {
     totalAmount: number;
     paymentMethod: string;
   } | null>(null);
+  // Estado para prevenir envíos duplicados
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const id = params?.id as string;
   if (!id) {
@@ -56,6 +58,22 @@ export default function RaffleDetails() {
   const { tickets: availableTickets, loading: ticketsLoading } =
     useAvailableTickets(raffleId);
   const { purchaseTickets, loading: purchaseLoading } = usePurchaseTickets();
+
+  // Reset isSubmitting when component unmounts
+  useEffect(() => {
+    return () => {
+      setIsSubmitting(false);
+    };
+  }, []);
+
+  // Function to reset purchase state
+  const resetPurchaseState = () => {
+    setShowPayment(false);
+    setSelectedTickets([]);
+    setPendingPurchase(null);
+    setPaymentMethod("");
+    setIsSubmitting(false);
+  };
 
   const handlePurchase = async () => {
     if (!session?.user) {
@@ -70,6 +88,12 @@ export default function RaffleDetails() {
 
     if (!paymentMethod) {
       toast.error("Debes seleccionar un método de pago.");
+      return;
+    }
+
+    // Prevenir compras múltiples
+    if (isSubmitting) {
+      toast.error("Ya tienes una compra en progreso. Por favor, espera.");
       return;
     }
 
@@ -102,6 +126,14 @@ export default function RaffleDetails() {
       toast.error("No hay compra pendiente");
       return;
     }
+
+    // Prevenir envíos duplicados
+    if (isSubmitting) {
+      toast.error("Ya estás procesando un pago. Por favor, espera.");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       console.log("Enviando datos:", {
@@ -141,15 +173,14 @@ export default function RaffleDetails() {
       );
 
       // Limpiar estados
-      setShowPayment(false);
-      setSelectedTickets([]);
-      setPendingPurchase(null);
-      setPaymentMethod("");
+      resetPurchaseState();
     } catch (error) {
       console.error("Error completing payment:", error);
       toast.error(
         error instanceof Error ? error.message : "Error al procesar el pago"
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -327,11 +358,17 @@ export default function RaffleDetails() {
 
                   <Button
                     onClick={handlePurchase}
-                    disabled={purchaseLoading || selectedTickets.length === 0}
+                    disabled={
+                      purchaseLoading ||
+                      selectedTickets.length === 0 ||
+                      isSubmitting
+                    }
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     {purchaseLoading
                       ? "Procesando..."
+                      : isSubmitting
+                      ? "Pago en Progreso..."
                       : "Continuar con el Pago"}
                   </Button>
                 </CardContent>
@@ -342,6 +379,8 @@ export default function RaffleDetails() {
                   onComplete={handlePaymentComplete}
                   totalAmount={pendingPurchase.totalAmount}
                   paymentMethod={pendingPurchase.paymentMethod}
+                  isSubmitting={isSubmitting}
+                  onCancel={resetPurchaseState}
                 />
               )
             )}

@@ -48,7 +48,7 @@ npm run create-admin
 
 Esto creará un usuario con las siguientes credenciales:
 
-- **Email**: admin@autorifapro.com
+- **Email**: admin@ganaxdar.com
 - **Contraseña**: admin123
 - **Rol**: admin
 
@@ -75,7 +75,7 @@ pnpm dev
 1. Ve a `http://localhost:3000`
 2. Haz clic en "Iniciar Sesión" o ve a `http://localhost:3000/login`
 3. Usa las credenciales del administrador:
-   - Email: `admin@autorifapro.com`
+   - Email: `admin@ganaxdar.com`
    - Contraseña: `admin123`
 4. Navega a `http://localhost:3000/admin` para acceder al panel administrativo
 

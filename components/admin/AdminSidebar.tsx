@@ -120,7 +120,7 @@ export default function AdminSidebar() {
           <div className="flex-1">
             <p className="text-sm font-medium">{user?.name || "Admin User"}</p>
             <p className="text-xs text-slate-400">
-              {user?.email || "admin@autorifapro.com"}
+              {user?.email || "admin@ganaxdar.com"}
             </p>
           </div>
         </div>

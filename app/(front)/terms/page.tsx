@@ -176,7 +176,7 @@ export default function Terms() {
             <p>
               Para preguntas sobre estos términos, contáctenos en:
               <br />
-              Email: legal@autorifapro.com
+              Email: legal@ganaxdar.com
               <br />
               Teléfono: +1 (555) 123-4567
             </p>

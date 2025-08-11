@@ -33,20 +33,21 @@ export default function AdminSettings() {
 
   const [settings, setSettings] = useState({
     // General Settings
-    siteName: "AutoRifaPro",
-    siteDescription: "Plataforma de rifas automotrices",
-    contactEmail: "contacto@autorifapro.com",
+    siteName: "Ganar por Dar",
+    siteDescription: " Ganar por Dar",
+    contactEmail: "soporte@ganaxdar.com",
     contactPhone: "+1-234-567-8900",
-    timezone: "America/Caracas",
+    timezone: "America/EEUU",
     language: "es",
 
     // Payment Settings
-    zelleEmail: process.env.ZELLE_EMAIL || "pagos@autorifapro.com",
-    paypalEmail: process.env.PAYPAL_EMAIL || "pagos@autorifapro.com",
-    binanceEmail: process.env.BINANCE_EMAIL || "autorifapro@binance.com",
-    pagoMovilPhone: process.env.PAGO_MOVIL_PHONE || "0412-1234567",
-    pagoMovilCI: process.env.PAGO_MOVIL_CI || "V-12345678",
-    pagoMovilBank: process.env.PAGO_MOVIL_BANK || "Banco de Venezuela",
+    zelleEmail: process.env.NEXT_PUBLIC_ZELLE_EMAIL || "soporte@ganaxdar.com",
+    paypalEmail: process.env.NEXT_PUBLIC_PAYPAL_EMAIL || "soporte@ganaxdar.com",
+    binanceEmail:
+      process.env.NEXT_PUBLIC_BINANCE_EMAIL || "oldschool1208cr@gmail.com",
+    pagoMovilPhone: process.env.NEXT_PUBLIC_PAGO_MOVIL_PHONE || "04123738860",
+    pagoMovilCI: process.env.NEXT_PUBLIC_PAGO_MOVIL_CI || "V-27248689",
+    pagoMovilBank: process.env.NEXT_PUBLIC_PAGO_MOVIL_BANK || "Banesco",
 
     // Notification Settings
     emailNotifications: true,
