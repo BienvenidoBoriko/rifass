@@ -13,7 +13,7 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <Image src={logo} alt="logo" width={32} height={32} />
-              <span className="text-xl font-bold">AutoRifa Pro</span>
+              <span className="text-xl font-bold">Ganaxdar</span>
             </div>
             <p className="text-slate-300 mb-4 max-w-md">
               La plataforma más segura y confiable para participar en rifas de

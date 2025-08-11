@@ -158,7 +158,7 @@ class EmailService {
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="margin: 0; font-size: 24px;">¡Compra Confirmada!</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">AutoRifa Pro</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Ganaxdar</p>
           </div>
           
           <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
@@ -192,7 +192,7 @@ class EmailService {
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
               Si tienes alguna pregunta, no dudes en contactarnos.<br>
-              <strong>AutoRifa Pro</strong> - La plataforma más segura para rifas de vehículos
+              <strong>Ganaxdar</strong> - La plataforma más segura para rifas de vehículos
             </p>
           </div>
         </div>
@@ -222,7 +222,7 @@ class EmailService {
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="margin: 0; font-size: 24px;">¡Pago Confirmado!</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">AutoRifa Pro</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Ganaxdar</p>
           </div>
           
           <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
@@ -254,7 +254,7 @@ class EmailService {
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
               Si tienes alguna pregunta, no dudes en contactarnos.<br>
-              <strong>AutoRifa Pro</strong> - La plataforma más segura para rifas de vehículos
+              <strong>Ganaxdar</strong> - La plataforma más segura para rifas de vehículos
             </p>
           </div>
         </div>
@@ -313,8 +313,8 @@ class EmailService {
             
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
-              ¡Gracias por participar en AutoRifa Pro!<br>
-              <strong>AutoRifa Pro</strong> - La plataforma más segura para rifas de vehículos
+              ¡Gracias por participar en Ganaxdar!<br>
+              <strong>Ganaxdar</strong> - La plataforma más segura para rifas de vehículos
             </p>
           </div>
         </div>
@@ -338,7 +338,7 @@ class EmailService {
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="margin: 0; font-size: 24px;">Notificación Administrativa</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">AutoRifa Pro</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Ganaxdar</p>
           </div>
           
           <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
@@ -349,7 +349,7 @@ class EmailService {
             
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
-              <strong>AutoRifa Pro</strong> - Panel de Administración
+              <strong>Ganaxdar</strong> - Panel de Administración
             </p>
           </div>
         </div>
