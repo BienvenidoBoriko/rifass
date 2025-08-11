@@ -7,9 +7,9 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Auth System",
-  description: "Login and Register with NextAuth and Prisma",
-  generator: "v0.dev",
+  title: "Ganar por Dar",
+  description: "Ganar por Dar",
+  generator: "Ganar por Dar",
 };
 
 export default function RootLayout({

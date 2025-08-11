@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { Car, Mail, Phone, MapPin } from "lucide-react";
+import Image from "next/image";
+import logo from "@/public/logo.jpg";
 
 export default function Footer() {
   return (
@@ -10,10 +12,8 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                <Car className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-xl font-bold"> GanaXDar</span>
+              <Image src={logo} alt="logo" width={32} height={32} />
+              <span className="text-xl font-bold">AutoRifa Pro</span>
             </div>
             <p className="text-slate-300 mb-4 max-w-md">
               La plataforma más segura y confiable para participar en rifas de
@@ -22,7 +22,7 @@ export default function Footer() {
             <div className="flex space-x-4">
               <div className="flex items-center space-x-2 text-slate-300">
                 <Mail className="h-4 w-4" />
-                <span>info@autorifapro.com</span>
+                <span>soporte@ganaxdar.com</span>
               </div>
             </div>
           </div>

@@ -36,8 +36,10 @@ interface WinnerEmailData {
 
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
+  private fromEmail: string;
 
   constructor() {
+    this.fromEmail = process.env.EMAIL_FROM || 'noreply@autorifapro.com';
     this.initializeTransporter();
   }
 
@@ -47,68 +49,128 @@ class EmailService {
       port: parseInt(process.env.EMAIL_SERVER_PORT || '587'),
       user: process.env.EMAIL_SERVER_USER || '',
       password: process.env.EMAIL_SERVER_PASSWORD || '',
-      from: process.env.EMAIL_FROM || 'noreply@autorifapro.com',
+      from: this.fromEmail,
     };
 
-    if (config.user && config.password) {
-      this.transporter = nodemailer.createTransporter({
+    if (!config.user || !config.password) {
+      console.warn('Email credentials not configured. Email service will be disabled.');
+      return;
+    }
+
+    try {
+      this.transporter = nodemailer.createTransport({
         host: config.host,
         port: config.port,
-        secure: config.port === 465,
+        secure: config.port === 465, // true for 465, false for other ports
         auth: {
           user: config.user,
           pass: config.password,
         },
+        // Add these options for better compatibility
+        tls: {
+          rejectUnauthorized: false // Only for development - remove in production
+        }
       });
+
+      // Verify the connection
+      this.verifyConnection();
+    } catch (error) {
+      console.error('Error initializing email transporter:', error);
+      this.transporter = null;
     }
   }
 
-  private async sendEmail(to: string, subject: string, html: string) {
+  private async verifyConnection() {
+    if (!this.transporter) return;
+
+    try {
+      await this.transporter.verify();
+      console.log('Email server connection verified successfully');
+    } catch (error) {
+      console.error('Email server connection failed:', error);
+      this.transporter = null;
+    }
+  }
+
+  private async sendEmail(to: string, subject: string, html: string): Promise<boolean> {
     if (!this.transporter) {
       console.warn('Email service not configured. Skipping email send.');
       return false;
     }
 
+    // Validate email address
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to)) {
+      console.error('Invalid email address:', to);
+      return false;
+    }
+
     try {
-      await this.transporter.sendMail({
-        from: process.env.EMAIL_FROM || 'noreply@autorifapro.com',
+      const info = await this.transporter.sendMail({
+        from: this.fromEmail,
         to,
         subject,
         html,
+        // Add text fallback
+        text: this.htmlToText(html)
       });
+
+      console.log('Email sent successfully:', info.messageId);
       return true;
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error sending email to', to, ':', error);
       return false;
     }
   }
 
-  async sendTicketPurchaseConfirmation(data: TicketPurchaseEmailData) {
+  // Simple HTML to text converter
+  private htmlToText(html: string): string {
+    return html
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  async sendTicketPurchaseConfirmation(data: TicketPurchaseEmailData): Promise<boolean> {
     const subject = `Confirmación de Compra - ${data.raffleTitle}`;
-    const html = `
+    const html = this.generateTicketPurchaseHTML(data);
+    return this.sendEmail(data.buyerEmail, subject, html);
+  }
+
+  private generateTicketPurchaseHTML(data: TicketPurchaseEmailData): string {
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://autorifapro.com';
+
+    return `
       <!DOCTYPE html>
-      <html>
+      <html lang="es">
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Confirmación de Compra</title>
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="margin: 0; font-size: 24px;">¡Compra Confirmada!</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;"> GanaXDar</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">AutoRifa Pro</p>
           </div>
           
-          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+          <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
             <h2 style="color: #2c3e50; margin-top: 0;">Hola ${data.buyerName},</h2>
             
             <p>Gracias por tu compra. Hemos recibido tu solicitud para los siguientes boletos:</p>
             
-            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
               <h3 style="margin-top: 0; color: #2c3e50;">${data.raffleTitle}</h3>
               <p><strong>Boletos:</strong> ${data.ticketNumbers.map(num => num.toString().padStart(4, '0')).join(', ')}</p>
               <p><strong>Método de pago:</strong> ${this.getPaymentMethodText(data.paymentMethod)}</p>
-              <p><strong>Total pagado:</strong> $${data.totalAmount}</p>
+              <p><strong>Total:</strong> $${data.totalAmount.toFixed(2)}</p>
             </div>
             
             <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;">
@@ -122,7 +184,7 @@ class EmailService {
             <p>Recibirás una notificación por email cuando tu pago sea confirmado.</p>
             
             <div style="text-align: center; margin-top: 30px;">
-              <a href="${process.env.NEXTAUTH_URL}/my-tickets" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              <a href="${baseUrl}/my-tickets" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
                 Ver Mis Boletos
               </a>
             </div>
@@ -130,43 +192,49 @@ class EmailService {
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
               Si tienes alguna pregunta, no dudes en contactarnos.<br>
-              <strong> GanaXDar</strong> - La plataforma más segura para rifas de vehículos
+              <strong>AutoRifa Pro</strong> - La plataforma más segura para rifas de vehículos
             </p>
           </div>
         </div>
       </body>
       </html>
     `;
+  }
 
+  async sendPaymentConfirmation(data: PaymentConfirmationEmailData): Promise<boolean> {
+    const subject = `Pago Confirmado - ${data.raffleTitle}`;
+    const html = this.generatePaymentConfirmationHTML(data);
     return this.sendEmail(data.buyerEmail, subject, html);
   }
 
-  async sendPaymentConfirmation(data: PaymentConfirmationEmailData) {
-    const subject = `Pago Confirmado - ${data.raffleTitle}`;
-    const html = `
+  private generatePaymentConfirmationHTML(data: PaymentConfirmationEmailData): string {
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://autorifapro.com';
+
+    return `
       <!DOCTYPE html>
-      <html>
+      <html lang="es">
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Pago Confirmado</title>
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="margin: 0; font-size: 24px;">¡Pago Confirmado!</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;"> GanaXDar</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">AutoRifa Pro</p>
           </div>
           
-          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+          <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
             <h2 style="color: #2c3e50; margin-top: 0;">Hola ${data.buyerName},</h2>
             
             <p>¡Excelente! Hemos confirmado tu pago y tus boletos están ahora <strong>activos</strong>.</p>
             
-            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
               <h3 style="margin-top: 0; color: #2c3e50;">${data.raffleTitle}</h3>
               <p><strong>Boletos activos:</strong> ${data.ticketNumbers.map(num => num.toString().padStart(4, '0')).join(', ')}</p>
               <p><strong>Método de pago:</strong> ${this.getPaymentMethodText(data.paymentMethod)}</p>
-              <p><strong>Total pagado:</strong> $${data.totalAmount}</p>
+              <p><strong>Total pagado:</strong> $${data.totalAmount.toFixed(2)}</p>
             </div>
             
             <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 20px 0;">
@@ -178,7 +246,7 @@ class EmailService {
             </div>
             
             <div style="text-align: center; margin-top: 30px;">
-              <a href="${process.env.NEXTAUTH_URL}/my-tickets" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              <a href="${baseUrl}/my-tickets" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
                 Ver Mis Boletos
               </a>
             </div>
@@ -186,39 +254,45 @@ class EmailService {
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
               Si tienes alguna pregunta, no dudes en contactarnos.<br>
-              <strong> GanaXDar</strong> - La plataforma más segura para rifas de vehículos
+              <strong>AutoRifa Pro</strong> - La plataforma más segura para rifas de vehículos
             </p>
           </div>
         </div>
       </body>
       </html>
     `;
-
-    return this.sendEmail(data.buyerEmail, subject, html);
   }
 
-  async sendWinnerNotification(data: WinnerEmailData) {
+  async sendWinnerNotification(data: WinnerEmailData): Promise<boolean> {
     const subject = `¡Felicidades! Eres el Ganador - ${data.raffleTitle}`;
-    const html = `
+    const html = this.generateWinnerNotificationHTML(data);
+    return this.sendEmail(data.winnerEmail, subject, html);
+  }
+
+  private generateWinnerNotificationHTML(data: WinnerEmailData): string {
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://autorifapro.com';
+
+    return `
       <!DOCTYPE html>
-      <html>
+      <html lang="es">
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>¡Eres el Ganador!</title>
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%); color: #333; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="margin: 0; font-size: 24px;">🎉 ¡FELICIDADES!</h1>
             <p style="margin: 10px 0 0 0; opacity: 0.9;">¡Eres el Ganador!</p>
           </div>
           
-          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+          <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
             <h2 style="color: #2c3e50; margin-top: 0;">Hola ${data.winnerName},</h2>
             
             <p>¡Increíbles noticias! Has ganado la rifa:</p>
             
-            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffd700;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffd700;">
               <h3 style="margin-top: 0; color: #2c3e50;">${data.raffleTitle}</h3>
               <p><strong>Boleto ganador:</strong> #${data.ticketNumber.toString().padStart(4, '0')}</p>
               <p><strong>Premio:</strong> ${data.prize}</p>
@@ -232,51 +306,50 @@ class EmailService {
             </div>
             
             <div style="text-align: center; margin-top: 30px;">
-              <a href="${process.env.NEXTAUTH_URL}/winners" style="background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%); color: #333; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+              <a href="${baseUrl}/winners" style="background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%); color: #333; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
                 Ver Ganadores
               </a>
             </div>
             
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
-              ¡Gracias por participar en  GanaXDar!<br>
-              <strong> GanaXDar</strong> - La plataforma más segura para rifas de vehículos
+              ¡Gracias por participar en AutoRifa Pro!<br>
+              <strong>AutoRifa Pro</strong> - La plataforma más segura para rifas de vehículos
             </p>
           </div>
         </div>
       </body>
       </html>
     `;
-
-    return this.sendEmail(data.winnerEmail, subject, html);
   }
 
-  async sendAdminNotification(subject: string, message: string) {
-    const adminEmails = process.env.ADMIN_EMAILS?.split(',') || ['admin@autorifapro.com'];
+  async sendAdminNotification(subject: string, message: string): Promise<boolean> {
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || ['admin@autorifapro.com'];
 
     const html = `
       <!DOCTYPE html>
-      <html>
+      <html lang="es">
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Notificación Administrativa</title>
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="margin: 0; font-size: 24px;">Notificación Administrativa</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;"> GanaXDar</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">AutoRifa Pro</p>
           </div>
           
-          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+          <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
             <h2 style="color: #2c3e50; margin-top: 0;">${subject}</h2>
-            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               ${message}
             </div>
             
             <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
-              <strong> GanaXDar</strong> - Panel de Administración
+              <strong>AutoRifa Pro</strong> - Panel de Administración
             </p>
           </div>
         </div>
@@ -292,17 +365,32 @@ class EmailService {
   }
 
   private getPaymentMethodText(method: string): string {
-    switch (method) {
-      case 'zelle':
-        return 'Zelle';
-      case 'paypal':
-        return 'PayPal';
-      case 'binance':
-        return 'Binance Pay';
-      case 'pago-movil':
-        return 'Pago Móvil';
-      default:
-        return method;
+    const paymentMethods: Record<string, string> = {
+      'zelle': 'Zelle',
+      'paypal': 'PayPal',
+      'binance': 'Binance Pay',
+      'pago-movil': 'Pago Móvil',
+      'transfer': 'Transferencia Bancaria',
+      'cash': 'Efectivo'
+    };
+
+    return paymentMethods[method] || method;
+  }
+
+  // Method to test email configuration
+  async testConnection(): Promise<boolean> {
+    if (!this.transporter) {
+      console.error('Email transporter not initialized');
+      return false;
+    }
+
+    try {
+      await this.transporter.verify();
+      console.log('Email connection test successful');
+      return true;
+    } catch (error) {
+      console.error('Email connection test failed:', error);
+      return false;
     }
   }
 }
