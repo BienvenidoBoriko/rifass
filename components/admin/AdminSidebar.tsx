@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import logo from "@/public/logo.jpg";
+import Image from "next/image";
 
 const navigation = [
   {
@@ -75,7 +77,7 @@ export default function AdminSidebar() {
       <div className="flex h-16 items-center px-6 border-b border-slate-800">
         <Link href="/admin" className="flex items-center space-x-2">
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-            <Car className="h-6 w-6 text-white" />
+            <Image src={logo} alt="logo" width={32} height={32} />
           </div>
           <div>
             <span className="text-white font-bold text-lg"> GanaXDar</span>
