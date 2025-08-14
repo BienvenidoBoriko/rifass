@@ -52,6 +52,7 @@ export default function RaffleForm({
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (raffle) {
@@ -77,16 +78,43 @@ export default function RaffleForm({
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setImagePreview(result);
-        setFormData((prev) => ({ ...prev, imageUrl: result }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        setUploadingImage(true);
+
+        // Show preview immediately
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          setImagePreview(result);
+        };
+        reader.readAsDataURL(file);
+
+        // Upload file to server
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("/api/upload/raffle-images", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to upload image");
+        }
+
+        const result = await response.json();
+        setFormData((prev) => ({ ...prev, imageUrl: result.url }));
+        toast.success("Imagen subida exitosamente");
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        toast.error("Error al subir la imagen");
+        setImagePreview(null);
+      } finally {
+        setUploadingImage(false);
+      }
     }
   };
 
@@ -319,16 +347,24 @@ export default function RaffleForm({
                       alt="Preview"
                       className="max-w-full h-48 object-cover rounded-lg mx-auto"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setImagePreview(null);
-                        setFormData((prev) => ({ ...prev, imageUrl: "" }));
-                      }}
-                    >
-                      Cambiar Imagen
-                    </Button>
+                    <div className="flex justify-center space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setImagePreview(null);
+                          setFormData((prev) => ({ ...prev, imageUrl: "" }));
+                        }}
+                      >
+                        Cambiar Imagen
+                      </Button>
+                      {uploadingImage && (
+                        <div className="flex items-center text-sm text-slate-600">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                          Subiendo...
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -347,6 +383,7 @@ export default function RaffleForm({
                       onChange={handleImageUpload}
                       className="hidden"
                       id="image-upload"
+                      disabled={uploadingImage}
                     />
                     <Button
                       type="button"
@@ -354,8 +391,9 @@ export default function RaffleForm({
                       onClick={() =>
                         document.getElementById("image-upload")?.click()
                       }
+                      disabled={uploadingImage}
                     >
-                      Seleccionar Imagen
+                      {uploadingImage ? "Subiendo..." : "Seleccionar Imagen"}
                     </Button>
                   </div>
                 )}

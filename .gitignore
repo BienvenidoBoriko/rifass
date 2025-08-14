@@ -4,3 +4,9 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Uploaded files
+public/uploads/payment-proofs/*
+public/uploads/raffle-images/*
+!public/uploads/payment-proofs/.gitkeep
+!public/uploads/raffle-images/.gitkeep

@@ -11,6 +11,7 @@ import {
   MoreHorizontal,
   Trophy,
   AlertTriangle,
+  Upload,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ export default function AdminRaffles() {
   const [deletingRaffle, setDeletingRaffle] = useState<Raffle | null>(null);
   const [savingRaffle, setSavingRaffle] = useState(false);
   const [assigningWinner, setAssigningWinner] = useState(false);
+  const [migratingImages, setMigratingImages] = useState(false);
 
   const fetchRaffles = async () => {
     try {
@@ -163,6 +165,28 @@ export default function AdminRaffles() {
     }
   };
 
+  const handleMigrateImages = async () => {
+    try {
+      setMigratingImages(true);
+      const response = await fetch("/api/admin/migrate-images", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to migrate images");
+      }
+
+      const result = await response.json();
+      toast.success(result.message);
+      await fetchRaffles();
+    } catch (error) {
+      console.error("Migration error:", error);
+      toast.error("Error al migrar las imágenes.");
+    } finally {
+      setMigratingImages(false);
+    }
+  };
+
   const filteredRaffles =
     rafflesData?.raffles.filter((raffle) =>
       raffle.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -232,6 +256,24 @@ export default function AdminRaffles() {
               <Button variant="outline" className="flex items-center space-x-2">
                 <Filter className="h-4 w-4" />
                 <span>Filtros</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleMigrateImages}
+                disabled={migratingImages}
+                className="flex items-center space-x-2"
+              >
+                {migratingImages ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span>Migrando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    <span>Migrar Imágenes</span>
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>

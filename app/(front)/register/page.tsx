@@ -255,43 +255,45 @@ export default function RegisterPage() {
               </form>
 
               {/* Test Accounts */}
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="text-sm font-medium text-blue-900 mb-3">
-                  Cuentas de Prueba:
-                </h4>
-                <div className="space-y-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTestLogin("test@example.com")}
-                    className="w-full text-left justify-start text-xs"
-                  >
-                    test@example.com (4 boletos)
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTestLogin("demo@test.com")}
-                    className="w-full text-left justify-start text-xs"
-                  >
-                    demo@test.com (3 boletos)
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTestLogin("user@example.com")}
-                    className="w-full text-left justify-start text-xs"
-                  >
-                    user@example.com (5 boletos)
-                  </Button>
+              {process.env.NODE_ENV === "development" && (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-900 mb-3">
+                    Cuentas de Prueba:
+                  </h4>
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTestLogin("test@example.com")}
+                      className="w-full text-left justify-start text-xs"
+                    >
+                      test@example.com (4 boletos)
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTestLogin("demo@test.com")}
+                      className="w-full text-left justify-start text-xs"
+                    >
+                      demo@test.com (3 boletos)
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTestLogin("user@example.com")}
+                      className="w-full text-left justify-start text-xs"
+                    >
+                      user@example.com (5 boletos)
+                    </Button>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-2">
+                    Contraseña para todas: <code>123456</code>
+                  </p>
                 </div>
-                <p className="text-xs text-blue-700 mt-2">
-                  Contraseña para todas: <code>123456</code>
-                </p>
-              </div>
+              )}
             </TabsContent>
 
             <TabsContent value="register">
