@@ -100,38 +100,100 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // Send email notification to winner
+        // Get all participants for this raffle
+        const allTickets = await prisma.ticket.findMany({
+            where: {
+                raffleId,
+                paymentStatus: 'confirmed'
+            },
+            select: {
+                id: true,
+                ticketNumber: true,
+                buyerName: true,
+                buyerEmail: true,
+                buyerPhone: true
+            }
+        });
+
+        // Group tickets by buyer email to avoid duplicate emails
+        const participants = new Map<string, {
+            buyerName: string;
+            buyerEmail: string;
+            ticketNumbers: number[];
+        }>();
+
+        allTickets.forEach(ticket => {
+            if (participants.has(ticket.buyerEmail)) {
+                participants.get(ticket.buyerEmail)!.ticketNumbers.push(ticket.ticketNumber);
+            } else {
+                participants.set(ticket.buyerEmail, {
+                    buyerName: ticket.buyerName,
+                    buyerEmail: ticket.buyerEmail,
+                    ticketNumbers: [ticket.ticketNumber]
+                });
+            }
+        });
+
+        // Send notifications to all participants
+        const notificationPromises: Promise<boolean>[] = [];
+
+        // Send winner notification
         try {
-            await emailService.sendWinnerNotification({
-                winnerName,
-                winnerEmail,
-                raffleTitle: raffle.title,
-                ticketNumber,
-                prize: raffle.description || raffle.title,
-            });
+            notificationPromises.push(
+                emailService.sendWinnerNotification({
+                    winnerName,
+                    winnerEmail,
+                    raffleTitle: raffle.title,
+                    ticketNumber,
+                    prize: raffle.description || raffle.title,
+                })
+            );
         } catch (emailError) {
             console.error("Error sending winner notification email:", emailError);
-            // Don't fail the winner assignment if email fails
         }
 
-        // Send admin notification
+        // Send notifications to non-winners
+        for (const [email, participant] of participants) {
+            if (email !== winnerEmail) {
+                try {
+                    notificationPromises.push(
+                        emailService.sendNonWinnerNotification({
+                            buyerName: participant.buyerName,
+                            buyerEmail: participant.buyerEmail,
+                            raffleTitle: raffle.title,
+                            ticketNumbers: participant.ticketNumbers,
+                            winnerName,
+                            winnerTicketNumber: ticketNumber,
+                        })
+                    );
+                } catch (emailError) {
+                    console.error(`Error sending non-winner notification to ${email}:`, emailError);
+                }
+            }
+        }
+
+        // Send comprehensive admin notification
         try {
-            await emailService.sendAdminNotification(
-                "Ganador Asignado",
-                `
-                <h3>Ganador asignado:</h3>
-                <ul>
-                    <li><strong>Rifa:</strong> ${raffle.title}</li>
-                    <li><strong>Ganador:</strong> ${winnerName} (${winnerEmail})</li>
-                    <li><strong>Boleto ganador:</strong> #${ticketNumber.toString().padStart(4, '0')}</li>
-                    <li><strong>Teléfono:</strong> ${winnerPhone || 'No proporcionado'}</li>
-                    <li><strong>Fecha del sorteo:</strong> ${new Date().toLocaleDateString()}</li>
-                </ul>
-                `
+            notificationPromises.push(
+                emailService.sendRaffleDrawNotification({
+                    raffleTitle: raffle.title,
+                    winnerName,
+                    winnerEmail,
+                    winnerTicketNumber: ticketNumber,
+                    totalParticipants: participants.size,
+                    totalTickets: allTickets.length,
+                })
             );
         } catch (adminEmailError) {
             console.error("Error sending admin notification:", adminEmailError);
-            // Don't fail the winner assignment if admin email fails
+        }
+
+        // Wait for all notifications to be sent (but don't fail if some fail)
+        try {
+            await Promise.allSettled(notificationPromises);
+            console.log(`Notifications sent for raffle ${raffleId}: ${participants.size} participants notified`);
+        } catch (error) {
+            console.error("Error sending notifications:", error);
         }
 
         return NextResponse.json({ success: true, winner });

@@ -34,6 +34,24 @@ interface WinnerEmailData {
   prize: string;
 }
 
+interface NonWinnerEmailData {
+  buyerName: string;
+  buyerEmail: string;
+  raffleTitle: string;
+  ticketNumbers: number[];
+  winnerName: string;
+  winnerTicketNumber: number;
+}
+
+interface RaffleDrawNotificationData {
+  raffleTitle: string;
+  winnerName: string;
+  winnerEmail: string;
+  winnerTicketNumber: number;
+  totalParticipants: number;
+  totalTickets: number;
+}
+
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
   private fromEmail: string;
@@ -269,6 +287,18 @@ class EmailService {
     return this.sendEmail(data.winnerEmail, subject, html);
   }
 
+  async sendNonWinnerNotification(data: NonWinnerEmailData): Promise<boolean> {
+    const subject = `Resultado del Sorteo - ${data.raffleTitle}`;
+    const html = this.generateNonWinnerNotificationHTML(data);
+    return this.sendEmail(data.buyerEmail, subject, html);
+  }
+
+  async sendRaffleDrawNotification(data: RaffleDrawNotificationData): Promise<boolean> {
+    const subject = `Sorteo Completado - ${data.raffleTitle}`;
+    const html = this.generateRaffleDrawNotificationHTML(data);
+    return this.sendEmail(process.env.ADMIN_EMAILS?.split(',')[0] || 'admin@ganaxdar.com', subject, html);
+  }
+
   private generateWinnerNotificationHTML(data: WinnerEmailData): string {
     const baseUrl = process.env.NEXTAUTH_URL || 'https://ganaxdar.com';
 
@@ -315,6 +345,114 @@ class EmailService {
             <p style="text-align: center; color: #6c757d; font-size: 14px;">
               ¡Gracias por participar en Ganaxdar!<br>
               <strong>Ganaxdar</strong> - La plataforma más segura para rifas de vehículos
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateNonWinnerNotificationHTML(data: NonWinnerEmailData): string {
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://ganaxdar.com';
+
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Resultado del Sorteo</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">🎯 Sorteo Completado</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Ganaxdar</p>
+          </div>
+          
+          <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <h2 style="color: #2c3e50; margin-top: 0;">Hola ${data.buyerName},</h2>
+            
+            <p>El sorteo de la rifa ha sido completado. Aquí están los resultados:</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6c757d;">
+              <h3 style="margin-top: 0; color: #2c3e50;">${data.raffleTitle}</h3>
+              <p><strong>Tus boletos:</strong> ${data.ticketNumbers.map(num => num.toString().padStart(4, '0')).join(', ')}</p>
+            </div>
+            
+            <div style="background: #e9ecef; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <h4 style="margin-top: 0; color: #495057;">🏆 Ganador del Sorteo</h4>
+              <p style="margin: 0; color: #495057;">
+                <strong>Ganador:</strong> ${data.winnerName}<br>
+                <strong>Boleto ganador:</strong> #${data.winnerTicketNumber.toString().padStart(4, '0')}
+              </p>
+            </div>
+            
+            <div style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <h4 style="margin-top: 0; color: #6c757d;">💡 ¡No te desanimes!</h4>
+              <p style="margin: 0; color: #6c757d;">
+                Gracias por participar. ¡Sigue atento a nuestras próximas rifas! 
+                Cada participación nos ayuda a seguir creciendo.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+              <a href="${baseUrl}/raffles" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Ver Próximas Rifas
+              </a>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
+            <p style="text-align: center; color: #6c757d; font-size: 14px;">
+              ¡Gracias por participar en Ganaxdar!<br>
+              <strong>Ganaxdar</strong> - La plataforma más segura para rifas de vehículos
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateRaffleDrawNotificationHTML(data: RaffleDrawNotificationData): string {
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Notificación de Sorteo Completado</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">✅ Sorteo Completado</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Notificación Administrativa</p>
+          </div>
+          
+          <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <h2 style="color: #2c3e50; margin-top: 0;">Sorteo Completado Exitosamente</h2>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+              <h3 style="margin-top: 0; color: #2c3e50;">${data.raffleTitle}</h3>
+              <p><strong>Ganador:</strong> ${data.winnerName} (${data.winnerEmail})</p>
+              <p><strong>Boleto ganador:</strong> #${data.winnerTicketNumber.toString().padStart(4, '0')}</p>
+              <p><strong>Total de participantes:</strong> ${data.totalParticipants}</p>
+              <p><strong>Total de boletos vendidos:</strong> ${data.totalTickets}</p>
+            </div>
+            
+            <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <h4 style="margin-top: 0; color: #155724;">📧 Notificaciones Enviadas</h4>
+              <p style="margin: 0; color: #155724;">
+                Se han enviado notificaciones por email a todos los participantes 
+                (ganador y no ganadores) sobre el resultado del sorteo.
+              </p>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
+            <p style="text-align: center; color: #6c757d; font-size: 14px;">
+              <strong>Ganaxdar</strong> - Panel de Administración
             </p>
           </div>
         </div>

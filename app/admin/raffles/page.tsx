@@ -54,6 +54,9 @@ export default function AdminRaffles() {
   const [savingRaffle, setSavingRaffle] = useState(false);
   const [assigningWinner, setAssigningWinner] = useState(false);
   const [migratingImages, setMigratingImages] = useState(false);
+  const [sendingNotifications, setSendingNotifications] = useState<
+    number | null
+  >(null);
 
   const fetchRaffles = async () => {
     try {
@@ -184,6 +187,30 @@ export default function AdminRaffles() {
       toast.error("Error al migrar las imágenes.");
     } finally {
       setMigratingImages(false);
+    }
+  };
+
+  const handleResendNotifications = async (raffleId: number) => {
+    try {
+      setSendingNotifications(raffleId);
+      const response = await fetch(
+        `/api/admin/raffles/${raffleId}/notify-winner`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to send notifications");
+      }
+
+      const result = await response.json();
+      toast.success(result.message);
+    } catch (error) {
+      console.error("Notification error:", error);
+      toast.error("Error al enviar las notificaciones.");
+    } finally {
+      setSendingNotifications(null);
     }
   };
 
@@ -401,6 +428,38 @@ export default function AdminRaffles() {
                                   Asignar Ganador
                                 </DropdownMenuItem>
                               </>
+                            )}
+                            {raffle.status === "drawn" && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleResendNotifications(raffle.id)
+                                }
+                                disabled={sendingNotifications === raffle.id}
+                              >
+                                {sendingNotifications === raffle.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                                    Enviando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg
+                                      className="h-4 w-4 mr-2"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                      />
+                                    </svg>
+                                    Reenviar Notificaciones
+                                  </>
+                                )}
+                              </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
