@@ -169,19 +169,20 @@ export default function Header() {
                     <span>Iniciar Sesión</span>
                   </Button>
                 )}
-
-                <Link
-                  href="/admin"
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                    isActive("/admin")
-                      ? "text-blue-600 bg-blue-50"
-                      : "text-slate-700 hover:text-blue-600 hover:bg-slate-50"
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>Admin</span>
-                </Link>
+                {user?.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                      isActive("/admin")
+                        ? "text-blue-600 bg-blue-50"
+                        : "text-slate-700 hover:text-blue-600 hover:bg-slate-50"
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Admin</span>
+                  </Link>
+                )}
               </div>
             </div>
           )}
