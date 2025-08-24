@@ -17,25 +17,50 @@ export async function POST(request: NextRequest) {
       title,
       description,
       imageUrl,
-      pricePerTicket,
+      pricePerTicketUSD,
+      pricePerTicketVES,
       totalTickets,
       startDate,
       endDate,
       drawDate,
-      status
+      status,
+      hasPredefinedWinners,
+      predefinedWinners
     } = body;
 
     // Validation
-    if (!title || !description || !pricePerTicket || !totalTickets || !startDate || !endDate || !drawDate) {
+    if (!title || !description || !pricePerTicketUSD || !pricePerTicketVES || !totalTickets || !startDate || !endDate || !drawDate) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    if (pricePerTicket <= 0 || totalTickets <= 0) {
+    if (pricePerTicketUSD <= 0 || pricePerTicketVES <= 0 || totalTickets <= 0) {
       return NextResponse.json(
-        { error: "Price and total tickets must be greater than 0" },
+        { error: "Prices and total tickets must be greater than 0" },
+        { status: 400 }
+      );
+    }
+
+    // Validación de tickets premiados
+    if (hasPredefinedWinners && (!predefinedWinners || !Array.isArray(predefinedWinners) || predefinedWinners.length === 0)) {
+      return NextResponse.json(
+        { error: "Predefined winners must be provided when hasPredefinedWinners is true" },
+        { status: 400 }
+      );
+    }
+
+    if (hasPredefinedWinners && predefinedWinners.length > 10) {
+      return NextResponse.json(
+        { error: "Maximum 10 predefined winners allowed" },
+        { status: 400 }
+      );
+    }
+
+    if (hasPredefinedWinners && predefinedWinners.some((ticket: number) => ticket < 0 || ticket >= totalTickets)) {
+      return NextResponse.json(
+        { error: "Predefined winner ticket numbers must be between 0 and totalTickets-1" },
         { status: 400 }
       );
     }
@@ -45,12 +70,15 @@ export async function POST(request: NextRequest) {
         title,
         description,
         imageUrl,
-        pricePerTicket: parseFloat(pricePerTicket),
+        pricePerTicketUSD: parseFloat(pricePerTicketUSD),
+        pricePerTicketVES: parseFloat(pricePerTicketVES),
         totalTickets: parseInt(totalTickets),
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         drawDate: new Date(drawDate),
-        status: status || 'active'
+        status: status || 'active',
+        hasPredefinedWinners: hasPredefinedWinners || false,
+        predefinedWinners: hasPredefinedWinners ? predefinedWinners : null,
       }
     });
 

@@ -359,8 +359,8 @@ export default function AdminRaffles() {
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-600">
                             <div>
-                              <span className="font-medium">Precio:</span> $
-                              {raffle.pricePerTicket}
+                              <span className="font-medium">Precio USD:</span> $
+                              {raffle.pricePerTicketUSD}
                             </div>
                             <div>
                               <span className="font-medium">Vendidos:</span>{" "}

@@ -3,6 +3,14 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+// Tasa de cambio oficial de Venezuela (2025-08-24)
+const EXCHANGE_RATE = 141.8843;
+
+// Función para convertir USD a VES
+function convertUSDToVES(usdAmount: number): number {
+  return Math.round(usdAmount * EXCHANGE_RATE * 100) / 100; // Redondear a 2 decimales
+}
+
 async function main() {
   console.log("🌱 Seeding database...");
 
@@ -56,13 +64,17 @@ async function main() {
           "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800&h=600&fit=crop",
           "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
         ]),
-        pricePerTicket: 25.0,
+        pricePerTicketUSD: 25.0,
+        pricePerTicketVES: convertUSDToVES(25.0),
+        exchangeRate: EXCHANGE_RATE,
+        currency: "USD",
         totalTickets: 10000,
         soldTickets: 0,
         startDate: new Date(Date.now() - 30 * 86400000),
         endDate: new Date(Date.now() + 15 * 86400000),
         drawDate: new Date(Date.now() + 16 * 86400000),
         status: "active",
+        hasPredefinedWinners: false,
       },
       {
         title: "Honda Civic Type R 2024",
@@ -74,13 +86,18 @@ async function main() {
           "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop",
           "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
         ]),
-        pricePerTicket: 35.0,
+        pricePerTicketUSD: 35.0,
+        pricePerTicketVES: convertUSDToVES(35.0),
+        exchangeRate: EXCHANGE_RATE,
+        currency: "USD",
         totalTickets: 10000,
         soldTickets: 0,
         startDate: new Date(Date.now() - 20 * 86400000),
         endDate: new Date(Date.now() + 25 * 86400000),
         drawDate: new Date(Date.now() + 26 * 86400000),
         status: "active",
+        hasPredefinedWinners: true,
+        predefinedWinners: JSON.stringify([100, 500, 1000, 2500, 5000, 7500, 9000, 9500, 9800, 9999]),
       },
       {
         title: "Ford Mustang GT 2024 - Convertible",
@@ -92,13 +109,17 @@ async function main() {
           "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
           "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800&h=600&fit=crop",
         ]),
-        pricePerTicket: 50.0,
+        pricePerTicketUSD: 50.0,
+        pricePerTicketVES: convertUSDToVES(50.0),
+        exchangeRate: EXCHANGE_RATE,
+        currency: "USD",
         totalTickets: 10000,
         soldTickets: 0,
         startDate: new Date(Date.now() - 10 * 86400000),
         endDate: new Date(Date.now() + 35 * 86400000),
         drawDate: new Date(Date.now() + 36 * 86400000),
         status: "active",
+        hasPredefinedWinners: false,
       },
       {
         title: "Tesla Model 3 Performance 2024",
@@ -110,13 +131,18 @@ async function main() {
           "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=800&h=600&fit=crop",
           "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
         ]),
-        pricePerTicket: 45.0,
+        pricePerTicketUSD: 45.0,
+        pricePerTicketVES: convertUSDToVES(45.0),
+        exchangeRate: EXCHANGE_RATE,
+        currency: "USD",
         totalTickets: 10000,
         soldTickets: 0,
         startDate: new Date(Date.now() - 5 * 86400000),
         endDate: new Date(Date.now() + 45 * 86400000),
         drawDate: new Date(Date.now() + 46 * 86400000),
         status: "active",
+        hasPredefinedWinners: true,
+        predefinedWinners: JSON.stringify([123, 456, 789, 1234, 5678, 8765, 4321, 9876, 5432, 1111]),
       },
       {
         title: "BMW X5 2023 - Ganador Anterior",
@@ -126,7 +152,10 @@ async function main() {
         galleryImages: JSON.stringify([
           "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop",
         ]),
-        pricePerTicket: 30.0,
+        pricePerTicketUSD: 30.0,
+        pricePerTicketVES: convertUSDToVES(30.0),
+        exchangeRate: EXCHANGE_RATE,
+        currency: "USD",
         totalTickets: 10000,
         soldTickets: 10000,
         startDate: new Date(Date.now() - 60 * 86400000),
@@ -137,6 +166,7 @@ async function main() {
         winnerName: "María González",
         winnerPhone: "+1234567890",
         winnerEmail: "maria.gonzalez@email.com",
+        hasPredefinedWinners: false,
       },
     ],
   });

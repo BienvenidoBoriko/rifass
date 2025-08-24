@@ -18,7 +18,8 @@ export async function GET() {
 
     const formattedRaffles = raffles.map((raffle) => ({
       ...raffle,
-      pricePerTicket: Number(raffle.pricePerTicket),
+      pricePerTicketUSD: Number(raffle.pricePerTicketUSD),
+      pricePerTicketVES: Number(raffle.pricePerTicketVES),
       galleryImages: Array.isArray(raffle.galleryImages)
         ? (raffle.galleryImages as string[])
         : [],

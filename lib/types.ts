@@ -5,7 +5,10 @@ export interface Raffle {
   description?: string;
   imageUrl?: string;
   galleryImages: string[];
-  pricePerTicket: number;
+  pricePerTicketUSD: number;
+  pricePerTicketVES: number;
+  exchangeRate: number;
+  currency: string;
   totalTickets: number;
   soldTickets: number;
   startDate: Date;
@@ -84,6 +87,11 @@ export interface PurchaseTicketsRequest {
   paymentReference?: string;
   paymentProof?: string;
   paymentComment?: string;
+  userInfo?: {
+    email: string;
+    phone?: string;
+    name?: string;
+  };
 }
 
 export interface PurchaseTicketsResponse {

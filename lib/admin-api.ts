@@ -14,7 +14,10 @@ export interface Raffle {
     title: string;
     description: string;
     imageUrl: string | null;
-    pricePerTicket: number;
+    pricePerTicketUSD: number;
+    pricePerTicketVES: number;
+    exchangeRate: number;
+    currency: string;
     totalTickets: number;
     soldTickets: number;
     startDate: string;
@@ -103,7 +106,8 @@ export const adminApi = {
         title: string;
         description: string;
         imageUrl: string;
-        pricePerTicket: number;
+        pricePerTicketUSD: number;
+        pricePerTicketVES: number;
         totalTickets: number;
         startDate: string;
         endDate: string;
@@ -121,7 +125,8 @@ export const adminApi = {
         title: string;
         description: string;
         imageUrl: string;
-        pricePerTicket: number;
+        pricePerTicketUSD: number;
+        pricePerTicketVES: number;
         totalTickets: number;
         startDate: string;
         endDate: string;

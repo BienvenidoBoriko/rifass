@@ -1,9 +1,10 @@
 "use client";
 
-import { Calendar, Users, DollarSign } from "lucide-react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 import { Raffle } from "@/lib/types";
 import Link from "next/link";
 
@@ -25,49 +26,69 @@ export default function RaffleCard({ raffle }: RaffleCardProps) {
           className="w-full h-48 object-cover"
         />
         <div className="absolute top-4 right-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-          ${raffle.pricePerTicket}/boleto
+          {formatCurrency(raffle.pricePerTicketUSD, "USD")}/boleto
+        </div>
+        <div className="absolute top-4 left-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+          {formatCurrency(raffle.pricePerTicketVES, "VES")}/boleto
         </div>
       </div>
 
       <CardContent className="p-6">
-        <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2">
-          {raffle.title}
-        </h3>
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">
+              {raffle.title}
+            </h3>
+            <p className="text-slate-600 line-clamp-2">{raffle.description}</p>
+          </div>
 
-        <div className="space-y-3 mb-4">
-          <div className="flex items-center justify-between text-sm text-slate-600">
-            <div className="flex items-center space-x-1">
-              <Calendar className="h-4 w-4" />
-              <span>
-                {daysLeft > 0 ? `${daysLeft} días restantes` : "Último día"}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-slate-600">Progreso de venta</span>
+              <span className="text-sm font-medium text-slate-900">
+                {raffle.soldTickets}/{raffle.totalTickets} boletos
               </span>
             </div>
-            <div className="flex items-center space-x-1">
-              <Users className="h-4 w-4" />
-              <span>
-                {raffle.soldTickets}/{raffle.totalTickets}
-              </span>
+            <Progress value={progressPercentage} className="h-2" />
+            <div className="text-xs text-slate-500">
+              {progressPercentage.toFixed(1)}% completado
             </div>
           </div>
 
-          <div>
-            <div className="flex justify-between text-sm text-slate-600 mb-1">
-              <span>Progreso de venta</span>
-              <span>{progressPercentage.toFixed(1)}%</span>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-slate-600">Precio USD:</span>
+              <div className="font-semibold text-green-600">
+                {formatCurrency(raffle.pricePerTicketUSD, "USD")}
+              </div>
             </div>
-            <Progress value={progressPercentage} className="h-2" />
+            <div>
+              <span className="text-slate-600">Precio VES:</span>
+              <div className="font-semibold text-blue-600">
+                {formatCurrency(raffle.pricePerTicketVES, "VES")}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-slate-600">
+              {daysLeft > 0 ? (
+                <span className="text-orange-600 font-medium">
+                  {daysLeft} día{daysLeft !== 1 ? "s" : ""} restante
+                  {daysLeft !== 1 ? "s" : ""}
+                </span>
+              ) : (
+                <span className="text-red-600 font-medium">Finalizada</span>
+              )}
+            </div>
+            <Link href={`/raffles/${raffle.id}`}>
+              <Button className="bg-gradient-to-r cursor-pointer from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                Ver Detalles
+              </Button>
+            </Link>
           </div>
         </div>
       </CardContent>
-
-      <CardFooter className="p-6 pt-0">
-        <Button
-          asChild
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-        >
-          <Link href={`/raffles/${raffle.id}`}>Ver Detalles</Link>
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, Minus } from "lucide-react";
+import { X, Plus } from "lucide-react";
+import { formatCurrency, calculateTotalPrice } from "@/lib/currency";
 
 interface TicketSelectorProps {
   availableTickets: number[];
   loading?: boolean;
   selectedTickets: number[];
   onSelectionChange: (tickets: number[]) => void;
-  pricePerTicket?: number;
+  pricePerTicketUSD?: number;
+  pricePerTicketVES?: number;
   maxTickets?: number;
 }
 
@@ -19,11 +19,10 @@ export default function TicketSelector({
   loading = false,
   selectedTickets,
   onSelectionChange,
-  pricePerTicket,
+  pricePerTicketUSD = 0,
+  pricePerTicketVES = 0,
   maxTickets = 10,
 }: TicketSelectorProps) {
-  const [searchNumber, setSearchNumber] = useState("");
-
   const addTicket = (ticketNumber: number) => {
     if (selectedTickets.length >= maxTickets) return;
     if (
@@ -53,82 +52,20 @@ export default function TicketSelector({
     onSelectionChange([...selectedTickets, ...randomTickets]);
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const number = parseInt(searchNumber);
-    if (!isNaN(number) && number >= 0 && number <= 9999) {
-      addTicket(number);
-      setSearchNumber("");
-    }
-  };
-
   const formatTicketNumber = (num: number) => num.toString().padStart(4, "0");
+
+  // Calcular totales en ambas monedas
+  const totalUSD = selectedTickets.length * pricePerTicketUSD;
+  const totalVES = selectedTickets.length * pricePerTicketVES;
 
   return (
     <div className="space-y-6">
-      <div>
-        <Label className="text-base font-semibold text-slate-900">
-          Seleccionar Boletos ({selectedTickets.length}/{maxTickets})
-        </Label>
-        <p className="text-sm text-slate-600 mt-1">
-          Elige tus números de la suerte o déjanos seleccionar por ti
-        </p>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => addRandomTickets(1)}
-          disabled={selectedTickets.length >= maxTickets}
-        >
-          <Plus className="h-4 w-4 mr-1" />1 Aleatorio
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => addRandomTickets(5)}
-          disabled={selectedTickets.length >= maxTickets - 4}
-        >
-          <Plus className="h-4 w-4 mr-1" />5 Aleatorios
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => onSelectionChange([])}
-          disabled={selectedTickets.length === 0}
-        >
-          Limpiar Todo
-        </Button>
-      </div>
-
-      {/* Search Specific Number */}
-      <form onSubmit={handleSearchSubmit} className="flex gap-2">
-        <div className="flex-1">
-          <Input
-            type="number"
-            min="0"
-            max="9999"
-            placeholder="Buscar número específico (0000-9999)"
-            value={searchNumber}
-            onChange={(e) => setSearchNumber(e.target.value)}
-          />
-        </div>
-        <Button type="submit" disabled={selectedTickets.length >= maxTickets}>
-          Agregar
-        </Button>
-      </form>
-
       {/* Selected Tickets */}
       {selectedTickets.length > 0 && (
         <div>
-          <Label className="text-sm font-medium text-slate-700">
+          <div className="text-sm font-medium text-slate-700 mb-2">
             Boletos Seleccionados:
-          </Label>
+          </div>
           <div className="flex flex-wrap gap-2 mt-2">
             {selectedTickets.map((ticket) => (
               <Badge
@@ -151,36 +88,114 @@ export default function TicketSelector({
       )}
 
       {/* Purchase Summary */}
-      {selectedTickets.length > 0 && pricePerTicket && (
-        <div className="bg-slate-50 rounded-lg p-4 space-y-2">
-          <h4 className="font-semibold text-slate-900">Resumen de Compra</h4>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span>Boletos seleccionados:</span>
-              <span className="font-medium">{selectedTickets.length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Precio por boleto:</span>
-              <span>${pricePerTicket}</span>
-            </div>
-            <div className="border-t pt-2">
-              <div className="flex justify-between font-semibold">
-                <span>Total:</span>
-                <span className="text-blue-600">
-                  ${(selectedTickets.length * pricePerTicket).toFixed(2)}
-                </span>
+      {selectedTickets.length > 0 &&
+        (pricePerTicketUSD > 0 || pricePerTicketVES > 0) && (
+          <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+            <h4 className="font-semibold text-slate-900">Resumen de Compra</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Boletos seleccionados:</span>
+                <span className="font-medium">{selectedTickets.length}</span>
+              </div>
+
+              {pricePerTicketUSD > 0 && (
+                <div className="flex justify-between">
+                  <span>Precio por boleto (USD):</span>
+                  <span className="font-medium text-green-600">
+                    {formatCurrency(pricePerTicketUSD, "USD")}
+                  </span>
+                </div>
+              )}
+
+              {pricePerTicketVES > 0 && (
+                <div className="flex justify-between">
+                  <span>Precio por boleto (VES):</span>
+                  <span className="font-medium text-blue-600">
+                    {formatCurrency(pricePerTicketVES, "VES")}
+                  </span>
+                </div>
+              )}
+
+              <div className="border-t pt-2 space-y-1">
+                <div className="flex justify-between font-semibold">
+                  <span>Total (USD):</span>
+                  <span className="text-green-600">
+                    {formatCurrency(totalUSD, "USD")}
+                  </span>
+                </div>
+                <div className="flex justify-between font-semibold">
+                  <span>Total (VES):</span>
+                  <span className="text-blue-600">
+                    {formatCurrency(totalVES, "VES")}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Availability Info */}
       <div className="text-sm text-slate-600">
-        <p>Boletos disponibles: {availableTickets.length.toLocaleString()}</p>
         <p>
-          Boletos vendidos: {(10000 - availableTickets.length).toLocaleString()}
+          Boletos disponibles:{" "}
+          <span className="font-medium">{availableTickets.length}</span>
         </p>
+        <p>
+          Máximo por compra: <span className="font-medium">{maxTickets}</span>
+        </p>
+      </div>
+
+      {/* Quick Actions - Solo selección aleatoria */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => addRandomTickets(1)}
+          disabled={selectedTickets.length >= maxTickets || loading}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Boleto Aleatorio
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => addRandomTickets(5)}
+          disabled={selectedTickets.length >= maxTickets || loading}
+        >
+          <Plus className="h-4 w-4 mr-1" />5 Boletos Aleatorios
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => addRandomTickets(10)}
+          disabled={selectedTickets.length >= maxTickets || loading}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          10 Boletos Aleatorios
+        </Button>
+        {selectedTickets.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onSelectionChange([])}
+            className="text-red-600 hover:text-red-700"
+          >
+            <X className="h-4 w-4 mr-1" />
+            Limpiar
+          </Button>
+        )}
+      </div>
+
+      {/* Información sobre selección aleatoria */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="text-sm text-blue-800">
+          <p className="font-medium mb-2">🎲 Selección de Boletos</p>
+          <p>
+            Los boletos se seleccionan de forma aleatoria para garantizar la
+            equidad en el sorteo.
+          </p>
+          <p className="mt-1">No es posible seleccionar números específicos.</p>
+        </div>
       </div>
     </div>
   );

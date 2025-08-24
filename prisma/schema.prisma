@@ -60,26 +60,32 @@ model VerificationToken {
 }
 
 model Raffle {
-  id                 Int      @id @default(autoincrement())
-  title              String   @db.VarChar(255)
-  description        String?  @db.Text
-  imageUrl           String?  @map("image_url") @db.VarChar(500)
-  galleryImages      Json?    @map("gallery_images")
-  pricePerTicket     Decimal  @map("price_per_ticket") @db.Decimal(10, 2)
-  totalTickets       Int      @map("total_tickets")
-  soldTickets        Int      @default(0) @map("sold_tickets")
-  startDate          DateTime @map("start_date")
-  endDate            DateTime @map("end_date")
-  drawDate           DateTime @map("draw_date")
-  status             Status   @default(active)
-  winnerTicketNumber Int?     @map("winner_ticket_number")
-  winnerName         String?  @map("winner_name") @db.VarChar(255)
-  winnerPhone        String?  @map("winner_phone") @db.VarChar(50)
-  winnerEmail        String?  @map("winner_email") @db.VarChar(255)
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
-  tickets            Ticket[]
-  winners            Winner[]
+  id                   Int      @id @default(autoincrement())
+  title                String   @db.VarChar(255)
+  description          String?  @db.Text
+  imageUrl             String?  @map("image_url") @db.VarChar(500)
+  galleryImages        Json?    @map("gallery_images")
+  pricePerTicketUSD    Decimal  @map("price_per_ticket_usd") @db.Decimal(10, 2)
+  pricePerTicketVES    Decimal  @map("price_per_ticket_ves") @db.Decimal(15, 2)
+  exchangeRate         Decimal  @default(1.000000) @map("exchange_rate") @db.Decimal(15, 6)
+  currency             String   @default("USD") @db.VarChar(3)
+  totalTickets         Int      @map("total_tickets")
+  soldTickets          Int      @default(0) @map("sold_tickets")
+  startDate            DateTime @map("start_date")
+  endDate              DateTime @map("end_date")
+  drawDate             DateTime @map("draw_date")
+  status               Status   @default(active)
+  winnerTicketNumber   Int?     @map("winner_ticket_number")
+  winnerName           String?  @map("winner_name") @db.VarChar(255)
+  winnerPhone          String?  @map("winner_phone") @db.VarChar(50)
+  winnerEmail          String?  @map("winner_email") @db.VarChar(255)
+  // Nuevos campos para múltiples ganadores
+  predefinedWinners    Json?    @map("predefined_winners") // Array de números de tickets premiados
+  hasPredefinedWinners Boolean  @default(false) @map("has_predefined_winners")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  tickets              Ticket[]
+  winners              Winner[]
 
   @@map("raffles")
 }

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { X, Upload, Calendar, DollarSign, Hash } from "lucide-react";
+import { X, Upload, Calendar, DollarSign, Hash, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import {
+  CURRENCIES,
+  convertUSDToVES,
+  convertVESToUSD,
+  formatCurrency,
+  type CurrencyCode,
+} from "@/lib/currency";
+import {
+  roundPrice,
+  roundExchangeRate,
+  parseAndRoundPrice,
+  cleanPriceInput,
+} from "@/lib/decimal-utils";
 
 interface RaffleFormProps {
   raffle?: {
@@ -21,7 +34,10 @@ interface RaffleFormProps {
     title: string;
     description: string;
     imageUrl: string | null;
-    pricePerTicket: number;
+    pricePerTicketUSD: number;
+    pricePerTicketVES: number;
+    exchangeRate: number;
+    currency: string;
     totalTickets: number;
     startDate: string;
     endDate: string;
@@ -43,12 +59,17 @@ export default function RaffleForm({
     title: "",
     description: "",
     imageUrl: "",
-    pricePerTicket: 0,
+    pricePerTicketUSD: 0,
+    pricePerTicketVES: 0,
+    exchangeRate: 141.88, // Tasa oficial actual de Venezuela
+    currency: "USD" as CurrencyCode,
     totalTickets: 10000,
     startDate: "",
     endDate: "",
     drawDate: "",
     status: "active" as "active" | "closed" | "drawn",
+    hasPredefinedWinners: false,
+    predefinedWinners: [] as number[],
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -60,22 +81,136 @@ export default function RaffleForm({
         title: raffle.title,
         description: raffle.description,
         imageUrl: raffle.imageUrl || "",
-        pricePerTicket: raffle.pricePerTicket,
+        pricePerTicketUSD: raffle.pricePerTicketUSD,
+        pricePerTicketVES: raffle.pricePerTicketVES,
+        exchangeRate: raffle.exchangeRate,
+        currency: raffle.currency as CurrencyCode,
         totalTickets: raffle.totalTickets,
         startDate: raffle.startDate.split("T")[0],
         endDate: raffle.endDate.split("T")[0],
         drawDate: raffle.drawDate.split("T")[0],
         status: raffle.status,
+        hasPredefinedWinners: (raffle as any).hasPredefinedWinners || false,
+        predefinedWinners: (raffle as any).predefinedWinners || [],
       });
       setImagePreview(raffle.imageUrl);
     }
   }, [raffle]);
 
   const handleInputChange = (field: string, value: string | number) => {
+    // Si es un campo de tasa de cambio, redondear a 6 decimales
+    if (field === "exchangeRate") {
+      const numericValue =
+        typeof value === "string" ? parseFloat(value) || 0 : value;
+      const roundedValue = roundExchangeRate(numericValue);
+
+      setFormData((prev) => ({
+        ...prev,
+        [field]: roundedValue,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
+  };
+
+  // Función para manejar tickets premiados
+  const handlePredefinedWinnersToggle = (checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      hasPredefinedWinners: checked,
+      predefinedWinners: checked ? prev.predefinedWinners : [],
     }));
+  };
+
+  const addPredefinedWinner = (ticketNumber: number) => {
+    if (formData.predefinedWinners.length >= 10) {
+      toast.error("Máximo 10 tickets premiados permitidos");
+      return;
+    }
+
+    if (ticketNumber < 0 || ticketNumber >= formData.totalTickets) {
+      toast.error(
+        `El número de ticket debe estar entre 0 y ${formData.totalTickets - 1}`
+      );
+      return;
+    }
+
+    if (formData.predefinedWinners.includes(ticketNumber)) {
+      toast.error("Este número de ticket ya está seleccionado");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      predefinedWinners: [...prev.predefinedWinners, ticketNumber].sort(
+        (a, b) => a - b
+      ),
+    }));
+  };
+
+  const removePredefinedWinner = (ticketNumber: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      predefinedWinners: prev.predefinedWinners.filter(
+        (num) => num !== ticketNumber
+      ),
+    }));
+  };
+
+  const handleTicketNumberInput = (value: string) => {
+    const ticketNumber = parseInt(value);
+    if (!isNaN(ticketNumber)) {
+      addPredefinedWinner(ticketNumber);
+    }
+  };
+
+  // Función para convertir precios entre monedas
+  const handlePriceChange = (
+    field: "pricePerTicketUSD" | "pricePerTicketVES",
+    value: number
+  ) => {
+    // Redondear a 2 decimales usando la utilidad
+    const roundedValue = roundPrice(value);
+
+    if (field === "pricePerTicketUSD") {
+      const vesPrice = convertUSDToVES(roundedValue);
+      // Redondear el precio en VES también a 2 decimales
+      const roundedVESPrice = roundPrice(vesPrice);
+
+      setFormData((prev) => ({
+        ...prev,
+        pricePerTicketUSD: roundedValue,
+        pricePerTicketVES: roundedVESPrice,
+      }));
+    } else {
+      const usdPrice = convertVESToUSD(roundedValue);
+      // Redondear el precio en USD también a 2 decimales
+      const roundedUSDPrice = roundPrice(usdPrice);
+
+      setFormData((prev) => ({
+        ...prev,
+        pricePerTicketUSD: roundedUSDPrice,
+        pricePerTicketVES: roundedValue,
+      }));
+    }
+  };
+
+  // Función para actualizar la tasa de cambio
+  const updateExchangeRate = () => {
+    if (formData.pricePerTicketUSD > 0 && formData.pricePerTicketVES > 0) {
+      const newRate = formData.pricePerTicketVES / formData.pricePerTicketUSD;
+      // Redondear la tasa de cambio a 6 decimales para mayor precisión
+      const roundedRate = roundExchangeRate(newRate);
+
+      setFormData((prev) => ({
+        ...prev,
+        exchangeRate: roundedRate,
+      }));
+      toast.success("Tasa de cambio actualizada");
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,8 +267,13 @@ export default function RaffleForm({
       return;
     }
 
-    if (formData.pricePerTicket <= 0) {
-      toast.error("El precio por boleto debe ser mayor a 0");
+    if (formData.pricePerTicketUSD <= 0) {
+      toast.error("El precio por boleto en USD debe ser mayor a 0");
+      return;
+    }
+
+    if (formData.pricePerTicketVES <= 0) {
+      toast.error("El precio por boleto en VES debe ser mayor a 0");
       return;
     }
 
@@ -158,6 +298,25 @@ export default function RaffleForm({
 
     if (drawDate <= endDate) {
       toast.error("La fecha de sorteo debe ser posterior a la fecha de fin");
+      return;
+    }
+
+    // Validación de tickets premiados
+    if (
+      formData.hasPredefinedWinners &&
+      formData.predefinedWinners.length === 0
+    ) {
+      toast.error(
+        "Debes seleccionar al menos un ticket premiado cuando activas esta opción"
+      );
+      return;
+    }
+
+    if (
+      formData.hasPredefinedWinners &&
+      formData.predefinedWinners.length > 10
+    ) {
+      toast.error("Máximo 10 tickets premiados permitidos");
       return;
     }
 
@@ -230,59 +389,236 @@ export default function RaffleForm({
             {/* Pricing and Tickets */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="pricePerTicket" className="flex items-center">
+                <Label
+                  htmlFor="pricePerTicketUSD"
+                  className="flex items-center"
+                >
                   <DollarSign className="h-4 w-4 mr-1" />
-                  Precio por Boleto *
+                  Precio por Boleto (USD) *
                 </Label>
                 <Input
-                  id="pricePerTicket"
+                  id="pricePerTicketUSD"
                   type="number"
-                  min="1"
-                  value={formData.pricePerTicket}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "pricePerTicket",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                  placeholder="25.00"
+                  min="0.01"
+                  step="0.01"
+                  value={formData.pricePerTicketUSD}
+                  onChange={(e) => {
+                    const cleanedValue = cleanPriceInput(e.target.value);
+                    const parsedValue = parseAndRoundPrice(cleanedValue);
+                    handlePriceChange("pricePerTicketUSD", parsedValue);
+                  }}
+                  placeholder="0.00"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="totalTickets" className="flex items-center">
-                  <Hash className="h-4 w-4 mr-1" />
-                  Total de Boletos *
+                <Label
+                  htmlFor="pricePerTicketVES"
+                  className="flex items-center"
+                >
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  Precio por Boleto (VES) *
                 </Label>
                 <Input
-                  id="totalTickets"
+                  id="pricePerTicketVES"
                   type="number"
-                  min="1"
-                  max="10000"
-                  value={formData.totalTickets}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "totalTickets",
-                      parseInt(e.target.value) || 0
-                    )
-                  }
-                  placeholder="10000"
+                  min="0.01"
+                  step="0.01"
+                  value={formData.pricePerTicketVES}
+                  onChange={(e) => {
+                    const cleanedValue = cleanPriceInput(e.target.value);
+                    const parsedValue = parseAndRoundPrice(cleanedValue);
+                    handlePriceChange("pricePerTicketVES", parsedValue);
+                  }}
+                  placeholder="0.00"
                   required
                 />
-                <p className="text-xs text-slate-500">
-                  Números del 0000 al{" "}
-                  {(formData.totalTickets - 1).toString().padStart(4, "0")}
-                </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Valor Total del Premio</Label>
-                <div className="text-2xl font-bold text-green-600">
-                  $
-                  {(
-                    formData.pricePerTicket * formData.totalTickets
-                  ).toLocaleString()}
+                <Label htmlFor="exchangeRate" className="flex items-center">
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Tasa de Cambio (VES/USD)
+                </Label>
+                <Input
+                  id="exchangeRate"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={formData.exchangeRate}
+                  onChange={(e) => {
+                    const numericValue = parseFloat(e.target.value) || 0;
+                    handleInputChange("exchangeRate", numericValue);
+                  }}
+                  placeholder="35.50"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={updateExchangeRate}
+                  className="mt-2"
+                >
+                  Actualizar Tasa
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="totalTickets" className="flex items-center">
+                <Hash className="h-4 w-4 mr-1" />
+                Total de Boletos *
+              </Label>
+              <Input
+                id="totalTickets"
+                type="number"
+                min="1"
+                max="10000"
+                value={formData.totalTickets}
+                onChange={(e) =>
+                  handleInputChange(
+                    "totalTickets",
+                    parseInt(e.target.value) || 0
+                  )
+                }
+                placeholder="10000"
+                required
+              />
+              <p className="text-xs text-slate-500">
+                Números del 0000 al{" "}
+                {(formData.totalTickets - 1).toString().padStart(4, "0")}
+              </p>
+            </div>
+
+            {/* Tickets Premiados */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="hasPredefinedWinners"
+                  checked={formData.hasPredefinedWinners}
+                  onChange={(e) =>
+                    handlePredefinedWinnersToggle(e.target.checked)
+                  }
+                  className="rounded"
+                />
+                <Label
+                  htmlFor="hasPredefinedWinners"
+                  className="text-base font-medium"
+                >
+                  Definir Tickets Premiados al Crear la Rifa
+                </Label>
+              </div>
+
+              {formData.hasPredefinedWinners && (
+                <div className="space-y-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">
+                      Tickets Premiados ({formData.predefinedWinners.length}/10)
+                    </Label>
+                    <span className="text-xs text-slate-500">
+                      Máximo 10 tickets
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      max={formData.totalTickets - 1}
+                      placeholder={`0 - ${formData.totalTickets - 1}`}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleTicketNumberInput(e.currentTarget.value);
+                          e.currentTarget.value = "";
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const input = document.querySelector(
+                          'input[placeholder*="0 -"]'
+                        ) as HTMLInputElement;
+                        if (input && input.value) {
+                          handleTicketNumberInput(input.value);
+                          input.value = "";
+                        }
+                      }}
+                    >
+                      Agregar
+                    </Button>
+                  </div>
+
+                  {formData.predefinedWinners.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        Tickets Seleccionados:
+                      </Label>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.predefinedWinners.map((ticketNumber) => (
+                          <div
+                            key={ticketNumber}
+                            className="flex items-center space-x-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                          >
+                            <span className="font-mono font-bold">
+                              #{ticketNumber.toString().padStart(4, "0")}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removePredefinedWinner(ticketNumber)
+                              }
+                              className="text-blue-600 hover:text-blue-800 text-lg font-bold"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="text-xs text-slate-600 bg-white p-3 rounded border">
+                    <p className="font-medium mb-1">ℹ️ Información:</p>
+                    <ul className="space-y-1">
+                      <li>
+                        • Los tickets premiados se seleccionarán automáticamente
+                        al finalizar la rifa
+                      </li>
+                      <li>
+                        • Si no se definen tickets premiados, los
+                        administradores podrán elegir ganadores manualmente
+                      </li>
+                      <li>
+                        • Los números de tickets deben estar entre 0 y{" "}
+                        {formData.totalTickets - 1}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Valor Total del Premio</Label>
+              <div className="space-y-2">
+                <div className="text-xl font-bold text-green-600">
+                  {formatCurrency(
+                    formData.pricePerTicketUSD * formData.totalTickets,
+                    "USD"
+                  )}
+                </div>
+                <div className="text-lg font-semibold text-blue-600">
+                  {formatCurrency(
+                    formData.pricePerTicketVES * formData.totalTickets,
+                    "VES"
+                  )}
                 </div>
               </div>
             </div>

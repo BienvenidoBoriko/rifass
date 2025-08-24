@@ -216,7 +216,7 @@ export default function AdminDashboard() {
                         {raffle.status === "active" ? "Activa" : raffle.status}
                       </Badge>
                       <span className="text-sm font-medium text-slate-900">
-                        ${raffle.pricePerTicket}
+                        ${raffle.pricePerTicketUSD}
                       </span>
                     </div>
                   </div>

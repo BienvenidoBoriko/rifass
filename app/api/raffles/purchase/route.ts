@@ -11,17 +11,32 @@ import { emailService } from "@/lib/email";
 export async function POST(request: NextRequest) {
   console.log("📩 Iniciando proceso de compra de tickets...");
 
-  // Check authentication
+  // Check authentication or user info
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    console.log("❌ Usuario no autenticado");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const body: PurchaseTicketsRequest = await request.json();
+
+  let userEmail: string;
+  let userName: string;
+  let userPhone: string;
+
+  if (session?.user?.email) {
+    // Usuario autenticado
+    userEmail = session.user.email;
+    userName = session.user.name || "";
+    userPhone = "";
+    console.log("✅ Usuario autenticado:", userEmail);
+  } else if (body.userInfo?.email) {
+    // Usuario no autenticado con información proporcionada
+    userEmail = body.userInfo.email;
+    userName = body.userInfo.name || "";
+    userPhone = body.userInfo.phone || "";
+    console.log("✅ Usuario no autenticado con email:", userEmail);
+  } else {
+    console.log("❌ Usuario no autenticado y sin información de contacto");
+    return NextResponse.json({ error: "Unauthorized - Se requiere email o autenticación" }, { status: 401 });
   }
 
-  console.log("✅ Usuario autenticado:", session.user.email);
-
   try {
-    const body: PurchaseTicketsRequest = await request.json();
     console.log("📋 Datos recibidos:", {
       raffleId: body.raffleId,
       ticketNumbers: body.ticketNumbers,
@@ -30,6 +45,9 @@ export async function POST(request: NextRequest) {
       paymentReference: body.paymentReference,
       hasPaymentProof: !!body.paymentProof,
       paymentComment: body.paymentComment,
+      userEmail,
+      userName,
+      userPhone,
     });
 
     const {
@@ -67,7 +85,9 @@ export async function POST(request: NextRequest) {
         select: {
           id: true,
           title: true,
-          pricePerTicket: true,
+          pricePerTicketUSD: true,
+          pricePerTicketVES: true,
+          currency: true,
           status: true,
           endDate: true,
         },
@@ -98,60 +118,45 @@ export async function POST(request: NextRequest) {
           ticketNumber: {
             in: ticketNumbers,
           },
-          paymentStatus: {
-            in: ["confirmed", "pending"],
-          },
         },
         select: {
           ticketNumber: true,
-          paymentStatus: true,
+          buyerEmail: true,
         },
       });
 
       if (existingTickets.length > 0) {
-        console.log("❌ Algunos tickets ya están ocupados:", existingTickets.map(t => t.ticketNumber));
-        throw new Error("Some tickets are already taken");
+        console.log("❌ Algunos tickets ya están ocupados:", existingTickets);
+
+        // Check if user already owns any of these tickets
+        const userOwnedTickets = existingTickets.filter(
+          (ticket) => ticket.buyerEmail === userEmail
+        );
+
+        if (userOwnedTickets.length > 0) {
+          throw new Error(`already own tickets: ${userOwnedTickets.map(t => t.ticketNumber).join(', ')}`);
+        }
+
+        throw new Error(`already taken tickets: ${existingTickets.map(t => t.ticketNumber).join(', ')}`);
       }
 
-      // Additional check: prevent the same user from purchasing the same tickets multiple times
-      const userExistingTickets = await tx.ticket.findMany({
-        where: {
-          raffleId,
-          ticketNumber: {
-            in: ticketNumbers,
-          },
-          buyerEmail: session.user.email,
-          paymentStatus: {
-            in: ["confirmed", "pending"],
-          },
-        },
-        select: {
-          ticketNumber: true,
-        },
-      });
-
-      if (userExistingTickets.length > 0) {
-        console.log("❌ Usuario ya tiene estos tickets:", userExistingTickets.map(t => t.ticketNumber));
-        throw new Error("You already own some of these tickets");
-      }
-
-      const totalAmount = ticketNumbers.length * Number(raffle.pricePerTicket);
+      // Calculate total amount based on currency
+      const pricePerTicket = raffle.currency === 'VES' ? raffle.pricePerTicketVES : raffle.pricePerTicketUSD;
+      const totalAmount = ticketNumbers.length * Number(pricePerTicket);
       console.log("💰 Monto total calculado:", totalAmount);
 
+      // Create tickets
       const ticketIds: number[] = [];
+      console.log("🎫 Creando tickets...");
 
-      // Insert tickets using authenticated user data
-      console.log("💾 Creando tickets en la base de datos...");
       for (const ticketNumber of ticketNumbers) {
-        console.log(`   📝 Creando ticket #${ticketNumber}`);
-
         const ticket = await tx.ticket.create({
           data: {
             raffleId,
             ticketNumber,
-            buyerName: session.user.name || "",
-            buyerPhone: "",
-            buyerEmail: session.user.email,
+            buyerName: userName,
+            buyerPhone: userPhone,
+            buyerEmail: userEmail,
             buyerCountry: "",
             buyerCity: "",
             paymentMethod,
@@ -175,8 +180,8 @@ export async function POST(request: NextRequest) {
     console.log("📧 Enviando notificación por email al usuario...");
     try {
       await emailService.sendTicketPurchaseConfirmation({
-        buyerName: session.user.name || "",
-        buyerEmail: session.user.email,
+        buyerName: userName,
+        buyerEmail: userEmail,
         raffleTitle: result.raffle.title,
         ticketNumbers,
         totalAmount: result.totalAmount,
@@ -196,7 +201,8 @@ export async function POST(request: NextRequest) {
         `
         <h3>Nueva compra realizada:</h3>
         <ul>
-          <li><strong>Usuario:</strong> ${session.user.name} (${session.user.email})</li>
+          <li><strong>Usuario:</strong> ${userName} (${userEmail})</li>
+          <li><strong>Teléfono:</strong> ${userPhone || 'No proporcionado'}</li>
           <li><strong>Rifa:</strong> ${result.raffle.title}</li>
           <li><strong>Boletos:</strong> ${ticketNumbers.map(num => num.toString().padStart(4, '0')).join(', ')}</li>
           <li><strong>Método de pago:</strong> ${paymentMethod}</li>
@@ -204,6 +210,7 @@ export async function POST(request: NextRequest) {
           <li><strong>Referencia:</strong> ${paymentReference || 'No proporcionada'}</li>
           <li><strong>Comentario:</strong> ${paymentComment || 'Sin comentarios'}</li>
           <li><strong>Comprobante:</strong> ${paymentProof ? 'Adjunto' : 'No proporcionado'}</li>
+          <li><strong>Tipo de usuario:</strong> ${session?.user ? 'Autenticado' : 'No autenticado'}</li>
         </ul>
         `
       );

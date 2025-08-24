@@ -19,6 +19,7 @@ import { validateFile } from "@/lib/utils";
 interface PaymentInstructionsProps {
   paymentMethod: string;
   totalAmount: number;
+  totalAmountVES?: number;
   onComplete: (reference: string, proofUrl?: string, comment?: string) => void;
   isSubmitting?: boolean;
   onCancel?: () => void;
@@ -27,6 +28,7 @@ interface PaymentInstructionsProps {
 export default function PaymentInstructions({
   paymentMethod,
   totalAmount,
+  totalAmountVES,
   onComplete,
   isSubmitting = false,
   onCancel,
@@ -233,9 +235,24 @@ export default function PaymentInstructions({
             <span>Monto a pagar:</span>
             <span className="font-semibold">${totalAmount}</span>
           </div>
+          {totalAmountVES && totalAmountVES > 0 && (
+            <div className="flex justify-between">
+              <span>Monto a pagar (VES):</span>
+              <span className="font-semibold text-blue-600">
+                Bs. {totalAmountVES.toLocaleString()}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between text-lg font-bold border-t pt-3">
             <span>Total a pagar:</span>
-            <span className="text-blue-600">${totalAmount}</span>
+            <div className="text-right">
+              <div className="text-blue-600">${totalAmount}</div>
+              {totalAmountVES && totalAmountVES > 0 && (
+                <div className="text-sm text-blue-500">
+                  Bs. {totalAmountVES.toLocaleString()}
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -444,6 +461,9 @@ export default function PaymentInstructions({
           <ul className="text-sm text-yellow-700 space-y-1">
             <li>
               • El pago debe realizarse por el monto exacto: ${totalAmount}
+              {totalAmountVES && totalAmountVES > 0 && (
+                <span> / Bs. {totalAmountVES.toLocaleString()}</span>
+              )}
             </li>
             <li>• Tus boletos serán reservados por 30 minutos</li>
             <li>• La confirmación puede tomar hasta 24 horas</li>

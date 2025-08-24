@@ -31,7 +31,8 @@ export async function PUT(
             title,
             description,
             imageUrl,
-            pricePerTicket,
+            pricePerTicketUSD,
+            pricePerTicketVES,
             totalTickets,
             startDate,
             endDate,
@@ -40,16 +41,16 @@ export async function PUT(
         } = body;
 
         // Validation
-        if (!title || !description || !pricePerTicket || !totalTickets || !startDate || !endDate || !drawDate) {
+        if (!title || !description || !pricePerTicketUSD || !pricePerTicketVES || !totalTickets || !startDate || !endDate || !drawDate) {
             return NextResponse.json(
                 { error: "Missing required fields" },
                 { status: 400 }
             );
         }
 
-        if (pricePerTicket <= 0 || totalTickets <= 0) {
+        if (pricePerTicketUSD <= 0 || pricePerTicketVES <= 0 || totalTickets <= 0) {
             return NextResponse.json(
-                { error: "Price and total tickets must be greater than 0" },
+                { error: "Prices and total tickets must be greater than 0" },
                 { status: 400 }
             );
         }
@@ -69,7 +70,8 @@ export async function PUT(
                 title,
                 description,
                 imageUrl,
-                pricePerTicket: parseFloat(pricePerTicket),
+                pricePerTicketUSD: parseFloat(pricePerTicketUSD),
+                pricePerTicketVES: parseFloat(pricePerTicketVES),
                 totalTickets: parseInt(totalTickets),
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),

@@ -20,6 +20,8 @@ interface WinnerAssignmentProps {
     title: string;
     totalTickets: number;
     soldTickets: number;
+    hasPredefinedWinners?: boolean;
+    predefinedWinners?: number[];
   };
   onAssign: (winnerData: any) => void;
   onCancel: () => void;
@@ -162,6 +164,51 @@ export default function WinnerAssignment({
                   %
                 </div>
               </div>
+
+              {/* Advertencia para rifas con ganadores predefinidos */}
+              {raffle.hasPredefinedWinners && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center space-x-2 text-yellow-800">
+                    <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      ⚠️
+                    </div>
+                    <span className="font-semibold">
+                      Ganadores Predefinidos
+                    </span>
+                  </div>
+                  <p className="text-sm text-yellow-700 mt-2">
+                    Esta rifa tiene{" "}
+                    <strong>
+                      {raffle.predefinedWinners?.length || 0} ganadores
+                      predefinidos
+                    </strong>
+                    . Los ganadores se seleccionarán automáticamente cuando la
+                    rifa se marque como sorteada.
+                  </p>
+                  {raffle.predefinedWinners &&
+                    raffle.predefinedWinners.length > 0 && (
+                      <div className="mt-2">
+                        <span className="text-sm font-medium text-yellow-800">
+                          Tickets Premiados:
+                        </span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {raffle.predefinedWinners.map((ticketNumber) => (
+                            <span
+                              key={ticketNumber}
+                              className="inline-block bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs font-mono font-bold"
+                            >
+                              #{ticketNumber.toString().padStart(4, "0")}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  <p className="text-xs text-yellow-600 mt-2">
+                    <strong>Nota:</strong> No es necesario asignar ganadores
+                    manualmente para esta rifa.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -169,80 +216,91 @@ export default function WinnerAssignment({
               <div className="space-y-4">
                 <div>
                   <Label>Seleccionar Boleto Ganador</Label>
-                  <div className="relative mt-2">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                    <Input
-                      placeholder="Buscar por nombre, email o número..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div className="border border-slate-200 rounded-lg max-h-96 overflow-y-auto">
-                  {loadingTickets ? (
-                    <div className="p-4 text-center text-slate-500">
-                      Cargando boletos...
-                    </div>
-                  ) : filteredTickets.length === 0 ? (
-                    <div className="p-4 text-center text-slate-500">
-                      {tickets.length === 0
-                        ? "No hay boletos confirmados para esta rifa"
-                        : "No se encontraron boletos que coincidan con la búsqueda"}
+                  {raffle.hasPredefinedWinners ? (
+                    <div className="mt-2 p-3 bg-gray-100 border border-gray-300 rounded-lg text-center">
+                      <p className="text-gray-600 text-sm">
+                        Esta rifa tiene ganadores predefinidos. No es necesario
+                        asignar ganadores manualmente.
+                      </p>
                     </div>
                   ) : (
-                    <div className="divide-y">
-                      {filteredTickets.map((ticket) => (
-                        <div
-                          key={ticket.id}
-                          className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors ${
-                            selectedTicket === ticket.id
-                              ? "bg-blue-50 border-l-4 border-blue-500"
-                              : ""
-                          }`}
-                          onClick={() => handleTicketSelect(ticket)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <Ticket className="h-4 w-4 text-blue-600" />
-                                <span className="font-mono font-semibold">
-                                  #
-                                  {ticket.ticketNumber
-                                    .toString()
-                                    .padStart(4, "0")}
-                                </span>
-                              </div>
-                              <div className="text-sm">
-                                <div className="font-medium">
-                                  {ticket.buyerName}
-                                </div>
-                                <div className="text-slate-600">
-                                  {ticket.buyerEmail}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xs text-slate-500">
-                                {ticket.buyerPhone || "Sin teléfono"}
-                              </div>
-                              <div
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                  ticket.paymentStatus === "confirmed"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-yellow-100 text-yellow-800"
-                                }`}
-                              >
-                                {ticket.paymentStatus === "confirmed"
-                                  ? "Confirmado"
-                                  : "Pendiente"}
-                              </div>
-                            </div>
+                    <>
+                      <div className="relative mt-2">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                        <Input
+                          placeholder="Buscar por nombre, email o número..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+
+                      <div className="border border-slate-200 rounded-lg max-h-96 overflow-y-auto">
+                        {loadingTickets ? (
+                          <div className="p-4 text-center text-slate-500">
+                            Cargando boletos...
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ) : filteredTickets.length === 0 ? (
+                          <div className="p-4 text-center text-slate-500">
+                            {tickets.length === 0
+                              ? "No hay boletos confirmados para esta rifa"
+                              : "No se encontraron boletos que coincidan con la búsqueda"}
+                          </div>
+                        ) : (
+                          <div className="divide-y">
+                            {filteredTickets.map((ticket) => (
+                              <div
+                                key={ticket.id}
+                                className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors ${
+                                  selectedTicket === ticket.id
+                                    ? "bg-blue-50 border-l-4 border-blue-500"
+                                    : ""
+                                }`}
+                                onClick={() => handleTicketSelect(ticket)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <Ticket className="h-4 w-4 text-blue-600" />
+                                      <span className="font-mono font-semibold">
+                                        #
+                                        {ticket.ticketNumber
+                                          .toString()
+                                          .padStart(4, "0")}
+                                      </span>
+                                    </div>
+                                    <div className="text-sm">
+                                      <div className="font-medium">
+                                        {ticket.buyerName}
+                                      </div>
+                                      <div className="text-slate-600">
+                                        {ticket.buyerEmail}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-xs text-slate-500">
+                                      {ticket.buyerPhone || "Sin teléfono"}
+                                    </div>
+                                    <div
+                                      className={`text-xs px-2 py-1 rounded-full ${
+                                        ticket.paymentStatus === "confirmed"
+                                          ? "bg-green-100 text-green-800"
+                                          : "bg-yellow-100 text-yellow-800"
+                                      }`}
+                                    >
+                                      {ticket.paymentStatus === "confirmed"
+                                        ? "Confirmado"
+                                        : "Pendiente"}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -253,88 +311,97 @@ export default function WinnerAssignment({
                   Detalles del Ganador
                 </h3>
 
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="winnerName">Nombre del Ganador *</Label>
-                    <Input
-                      id="winnerName"
-                      value={winnerData.winnerName}
-                      onChange={(e) =>
-                        setWinnerData((prev) => ({
-                          ...prev,
-                          winnerName: e.target.value,
-                        }))
-                      }
-                      placeholder="Nombre completo del ganador"
-                      required
-                    />
+                {raffle.hasPredefinedWinners ? (
+                  <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg text-center">
+                    <p className="text-gray-600 text-sm">
+                      Los ganadores se asignarán automáticamente cuando la rifa
+                      se marque como sorteada.
+                    </p>
                   </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="winnerName">Nombre del Ganador *</Label>
+                      <Input
+                        id="winnerName"
+                        value={winnerData.winnerName}
+                        onChange={(e) =>
+                          setWinnerData((prev) => ({
+                            ...prev,
+                            winnerName: e.target.value,
+                          }))
+                        }
+                        placeholder="Nombre completo del ganador"
+                        required
+                      />
+                    </div>
 
-                  <div>
-                    <Label htmlFor="winnerEmail">Email del Ganador *</Label>
-                    <Input
-                      id="winnerEmail"
-                      type="email"
-                      value={winnerData.winnerEmail}
-                      onChange={(e) =>
-                        setWinnerData((prev) => ({
-                          ...prev,
-                          winnerEmail: e.target.value,
-                        }))
-                      }
-                      placeholder="email@ejemplo.com"
-                      required
-                    />
+                    <div>
+                      <Label htmlFor="winnerEmail">Email del Ganador *</Label>
+                      <Input
+                        id="winnerEmail"
+                        type="email"
+                        value={winnerData.winnerEmail}
+                        onChange={(e) =>
+                          setWinnerData((prev) => ({
+                            ...prev,
+                            winnerEmail: e.target.value,
+                          }))
+                        }
+                        placeholder="email@ejemplo.com"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="winnerPhone">Teléfono del Ganador</Label>
+                      <Input
+                        id="winnerPhone"
+                        value={winnerData.winnerPhone}
+                        onChange={(e) =>
+                          setWinnerData((prev) => ({
+                            ...prev,
+                            winnerPhone: e.target.value,
+                          }))
+                        }
+                        placeholder="+58 412-123-4567"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="videoUrl">URL del Video del Sorteo</Label>
+                      <Input
+                        id="videoUrl"
+                        value={winnerData.videoUrl}
+                        onChange={(e) =>
+                          setWinnerData((prev) => ({
+                            ...prev,
+                            videoUrl: e.target.value,
+                          }))
+                        }
+                        placeholder="https://youtube.com/watch?v=..."
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="claimed"
+                        checked={winnerData.claimed}
+                        onChange={(e) =>
+                          setWinnerData((prev) => ({
+                            ...prev,
+                            claimed: e.target.checked,
+                          }))
+                        }
+                        className="rounded"
+                      />
+                      <Label htmlFor="claimed">Premio Reclamado</Label>
+                    </div>
                   </div>
+                )}
 
-                  <div>
-                    <Label htmlFor="winnerPhone">Teléfono del Ganador</Label>
-                    <Input
-                      id="winnerPhone"
-                      value={winnerData.winnerPhone}
-                      onChange={(e) =>
-                        setWinnerData((prev) => ({
-                          ...prev,
-                          winnerPhone: e.target.value,
-                        }))
-                      }
-                      placeholder="+58 412-123-4567"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="videoUrl">URL del Video del Sorteo</Label>
-                    <Input
-                      id="videoUrl"
-                      value={winnerData.videoUrl}
-                      onChange={(e) =>
-                        setWinnerData((prev) => ({
-                          ...prev,
-                          videoUrl: e.target.value,
-                        }))
-                      }
-                      placeholder="https://youtube.com/watch?v=..."
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="claimed"
-                      checked={winnerData.claimed}
-                      onChange={(e) =>
-                        setWinnerData((prev) => ({
-                          ...prev,
-                          claimed: e.target.checked,
-                        }))
-                      }
-                      className="rounded"
-                    />
-                    <Label htmlFor="claimed">Premio Reclamado</Label>
-                  </div>
-                </div>
-
-                {selectedTicket && (
+                {selectedTicket && !raffle.hasPredefinedWinners && (
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                     <div className="flex items-center space-x-2 text-green-800">
                       <Trophy className="h-5 w-5" />
@@ -361,13 +428,24 @@ export default function WinnerAssignment({
               <Button type="button" variant="outline" onClick={onCancel}>
                 Cancelar
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading || !selectedTicket}
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
-              >
-                {isLoading ? "Asignando..." : "Asignar Ganador"}
-              </Button>
+              {raffle.hasPredefinedWinners ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled
+                  className="bg-gray-100 text-gray-500 cursor-not-allowed"
+                >
+                  Ganadores Predefinidos
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={isLoading || !selectedTicket}
+                  className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+                >
+                  {isLoading ? "Asignando..." : "Asignar Ganador"}
+                </Button>
+              )}
             </div>
           </form>
         </CardContent>

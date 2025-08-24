@@ -25,6 +25,7 @@ import CountdownTimer from "@/components/CountdownTimer";
 import TicketSelector from "@/components/TicketSelector";
 import PaymentInstructions from "@/components/PaymentInstructions";
 import LoginModal from "@/components/LoginModal";
+import UserInfoModal from "@/components/UserInfoModal";
 import { useRaffle, useAvailableTickets } from "@/hooks/use-raffles";
 import { usePurchaseTickets } from "@/hooks/usePurchaseTickets";
 import { useSession } from "next-auth/react";
@@ -38,12 +39,19 @@ export default function RaffleDetails() {
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   const [showPayment, setShowPayment] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showUserInfoModal, setShowUserInfoModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("");
   // Estado para almacenar los datos de la compra pendiente
   const [pendingPurchase, setPendingPurchase] = useState<{
     ticketNumbers: number[];
     totalAmount: number;
+    totalAmountVES: number;
     paymentMethod: string;
+    userInfo?: {
+      email: string;
+      phone?: string;
+      name?: string;
+    };
   } | null>(null);
   // Estado para prevenir envíos duplicados
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,14 +81,10 @@ export default function RaffleDetails() {
     setPendingPurchase(null);
     setPaymentMethod("");
     setIsSubmitting(false);
+    setShowUserInfoModal(false);
   };
 
   const handlePurchase = async () => {
-    if (!session?.user) {
-      setShowLoginModal(true);
-      return;
-    }
-
     if (selectedTickets.length === 0) {
       toast.error("Debes seleccionar al menos un boleto para continuar.");
       return;
@@ -97,12 +101,42 @@ export default function RaffleDetails() {
       return;
     }
 
+    // Si el usuario no está autenticado, mostrar modal de información
+    if (!session?.user) {
+      setShowUserInfoModal(true);
+      return;
+    }
+
+    // Si está autenticado, proceder directamente
+    proceedWithPurchase();
+  };
+
+  const handleUserInfoSubmit = (userInfo: {
+    email: string;
+    phone?: string;
+    name?: string;
+  }) => {
+    setShowUserInfoModal(false);
+    proceedWithPurchase(userInfo);
+  };
+
+  const proceedWithPurchase = (userInfo?: {
+    email: string;
+    phone?: string;
+    name?: string;
+  }) => {
     // Guardar los datos de la compra pendiente
-    const totalAmount = selectedTickets.length * (raffle?.pricePerTicket || 0);
+    const totalAmount =
+      selectedTickets.length * (raffle?.pricePerTicketUSD || 0);
+    const totalAmountVES =
+      selectedTickets.length * (raffle?.pricePerTicketVES || 0);
+
     setPendingPurchase({
       ticketNumbers: [...selectedTickets],
       totalAmount,
+      totalAmountVES,
       paymentMethod,
+      userInfo,
     });
 
     // Mostrar instrucciones de pago sin crear tickets aún
@@ -117,11 +151,6 @@ export default function RaffleDetails() {
     proofUrl?: string,
     comment?: string
   ) => {
-    if (!session?.user) {
-      toast.error("Debes iniciar sesión para completar el pago");
-      return;
-    }
-
     if (!pendingPurchase) {
       toast.error("No hay compra pendiente");
       return;
@@ -143,6 +172,7 @@ export default function RaffleDetails() {
         paymentReference: reference,
         paymentProof: proofUrl,
         paymentComment: comment,
+        userInfo: pendingPurchase.userInfo,
       });
 
       const response = await fetch("/api/raffles/purchase", {
@@ -157,6 +187,7 @@ export default function RaffleDetails() {
           paymentReference: reference,
           paymentProof: proofUrl,
           paymentComment: comment,
+          userInfo: pendingPurchase.userInfo,
         }),
       });
 
@@ -241,7 +272,7 @@ export default function RaffleDetails() {
                 className="w-full h-96 object-cover rounded-lg"
               />
               <div className="absolute top-4 right-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                ${raffle.pricePerTicket}/boleto
+                ${raffle.pricePerTicketUSD}/boleto
               </div>
             </div>
 
@@ -353,7 +384,8 @@ export default function RaffleDetails() {
                     loading={ticketsLoading}
                     selectedTickets={selectedTickets}
                     onSelectionChange={setSelectedTickets}
-                    pricePerTicket={raffle.pricePerTicket}
+                    pricePerTicketUSD={raffle.pricePerTicketUSD}
+                    pricePerTicketVES={raffle.pricePerTicketVES}
                   />
 
                   <Button
@@ -369,8 +401,20 @@ export default function RaffleDetails() {
                       ? "Procesando..."
                       : isSubmitting
                       ? "Pago en Progreso..."
-                      : "Continuar con el Pago"}
+                      : session?.user
+                      ? "Continuar con el Pago"
+                      : "Comprar Boletos"}
                   </Button>
+
+                  {!session?.user && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs text-blue-800 text-center">
+                        <strong>💡 No tienes cuenta?</strong> Puedes comprar
+                        boletos ingresando tu email y teléfono. Te recomendamos
+                        crear una cuenta para un mejor seguimiento.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -378,6 +422,7 @@ export default function RaffleDetails() {
                 <PaymentInstructions
                   onComplete={handlePaymentComplete}
                   totalAmount={pendingPurchase.totalAmount}
+                  totalAmountVES={pendingPurchase.totalAmountVES}
                   paymentMethod={pendingPurchase.paymentMethod}
                   isSubmitting={isSubmitting}
                   onCancel={resetPurchaseState}
@@ -391,6 +436,13 @@ export default function RaffleDetails() {
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
+      />
+
+      <UserInfoModal
+        isOpen={showUserInfoModal}
+        onClose={() => setShowUserInfoModal(false)}
+        onContinue={handleUserInfoSubmit}
+        isSubmitting={isSubmitting}
       />
     </>
   );

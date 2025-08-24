@@ -15,6 +15,7 @@ import { useUserTickets } from "@/hooks/useUserTickets";
 import { useSession } from "next-auth/react";
 import LoginModal from "@/components/LoginModal";
 import { useState } from "react";
+import { convertUSDToVES, formatCurrency } from "@/lib/currency";
 
 export default function MyTickets() {
   const { data: session } = useSession();
@@ -259,8 +260,16 @@ export default function MyTickets() {
                                 <div className="text-sm font-medium text-slate-700 mb-1">
                                   Monto Pagado
                                 </div>
-                                <div className="text-2xl font-bold text-green-600">
-                                  ${ticket.amountPaid}
+                                <div className="space-y-1">
+                                  <div className="text-2xl font-bold text-green-600">
+                                    {formatCurrency(ticket.amountPaid, "USD")}
+                                  </div>
+                                  <div className="text-lg font-semibold text-blue-600">
+                                    {formatCurrency(
+                                      convertUSDToVES(ticket.amountPaid),
+                                      "VES"
+                                    )}
+                                  </div>
                                 </div>
                               </div>
 
@@ -286,8 +295,8 @@ export default function MyTickets() {
                                 </span>
                               </div>
                               <p className="text-sm text-yellow-700 mt-1">
-                                Tu boleto será confirmado una vez que se verifique
-                                el pago.
+                                Tu boleto será confirmado una vez que se
+                                verifique el pago.
                               </p>
                             </div>
                           )}
@@ -297,8 +306,8 @@ export default function MyTickets() {
                               <div className="flex items-center space-x-2 text-green-800">
                                 <CheckCircle className="h-4 w-4" />
                                 <span className="text-sm font-medium">
-                                  ¡Boleto confirmado! Ya estás participando en el
-                                  sorteo.
+                                  ¡Boleto confirmado! Ya estás participando en
+                                  el sorteo.
                                 </span>
                               </div>
                             </div>
