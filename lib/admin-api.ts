@@ -158,6 +158,13 @@ export const adminApi = {
         });
     },
 
+    // Reject payment
+    async rejectPayment(params: { ticketId: number }): Promise<{ success: boolean }> {
+        return apiCall<{ success: boolean }>(`/api/admin/tickets/${params.ticketId}/reject`, {
+            method: "PUT",
+        });
+    },
+
     // Update raffle status
     async updateRaffleStatus(params: { raffleId: number; status: 'active' | 'closed' | 'drawn' }): Promise<{ success: boolean }> {
         return apiCall<{ success: boolean }>(`/api/admin/raffles/${params.raffleId}/status`, {

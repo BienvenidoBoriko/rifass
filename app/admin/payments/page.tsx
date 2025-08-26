@@ -26,6 +26,7 @@ export default function AdminPayments() {
   const [confirmingPayment, setConfirmingPayment] = useState<number | null>(
     null
   );
+  const [rejectingPayment, setRejectingPayment] = useState<number | null>(null);
 
   const fetchPayments = async () => {
     try {
@@ -58,6 +59,23 @@ export default function AdminPayments() {
       toast.error("No se pudo confirmar el pago.");
     } finally {
       setConfirmingPayment(null);
+    }
+  };
+
+  const rejectPayment = async (ticketId: number) => {
+    try {
+      setRejectingPayment(ticketId);
+      await adminApi.rejectPayment({ ticketId });
+
+      toast.success("El pago ha sido rechazado exitosamente.");
+
+      // Refetch payments
+      await fetchPayments();
+    } catch (error) {
+      console.error("Reject payment error:", error);
+      toast.error("No se pudo rechazar el pago.");
+    } finally {
+      setRejectingPayment(null);
     }
   };
 
@@ -313,9 +331,13 @@ export default function AdminPayments() {
                           variant="outline"
                           size="sm"
                           className="text-red-600 hover:text-red-700"
+                          onClick={() => rejectPayment(payment.ticketId)}
+                          disabled={rejectingPayment === payment.ticketId}
                         >
                           <X className="h-4 w-4 mr-1" />
-                          Rechazar
+                          {rejectingPayment === payment.ticketId
+                            ? "Rechazando..."
+                            : "Rechazar"}
                         </Button>
                       </div>
                       {payment.paymentComment && (

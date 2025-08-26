@@ -17,6 +17,15 @@ interface TicketPurchaseEmailData {
   paymentMethod: string;
 }
 
+interface PaymentRejectionEmailData {
+  buyerName: string;
+  buyerEmail: string;
+  raffleTitle: string;
+  ticketNumbers: number[];
+  totalAmount: number;
+  paymentMethod: string;
+}
+
 interface PaymentConfirmationEmailData {
   buyerName: string;
   buyerEmail: string;
@@ -281,6 +290,12 @@ class EmailService {
     `;
   }
 
+  async sendPaymentRejection(data: PaymentRejectionEmailData): Promise<boolean> {
+    const subject = `Pago Rechazado - ${data.raffleTitle}`;
+    const html = this.generatePaymentRejectionHTML(data);
+    return this.sendEmail(data.buyerEmail, subject, html);
+  }
+
   async sendWinnerNotification(data: WinnerEmailData): Promise<boolean> {
     const subject = `¡Felicidades! Eres el Ganador - ${data.raffleTitle}`;
     const html = this.generateWinnerNotificationHTML(data);
@@ -297,6 +312,61 @@ class EmailService {
     const subject = `Sorteo Completado - ${data.raffleTitle}`;
     const html = this.generateRaffleDrawNotificationHTML(data);
     return this.sendEmail(process.env.ADMIN_EMAILS?.split(',')[0] || 'admin@ganaxdar.com', subject, html);
+  }
+
+  private generatePaymentRejectionHTML(data: PaymentRejectionEmailData): string {
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://ganaxdar.com';
+
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pago Rechazado</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">🚫 Pago Rechazado</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Ganaxdar</p>
+          </div>
+          
+          <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <h2 style="color: #2c3e50; margin-top: 0;">Hola ${data.buyerName},</h2>
+            
+            <p>Lamentamos informarte que tu pago ha sido rechazado.</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545;">
+              <h3 style="margin-top: 0; color: #2c3e50;">${data.raffleTitle}</h3>
+              <p><strong>Boletos:</strong> ${data.ticketNumbers.map(num => num.toString().padStart(4, '0')).join(', ')}</p>
+              <p><strong>Método de pago:</strong> ${this.getPaymentMethodText(data.paymentMethod)}</p>
+              <p><strong>Total:</strong> $${data.totalAmount.toFixed(2)}</p>
+            </div>
+            
+            <div style="background: #ffe3e3; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <h4 style="margin-top: 0; color: #721c24;">🚫 Rechazado</h4>
+              <p style="margin: 0; color: #721c24;">
+                Tu pago no ha sido procesado correctamente. Por favor, intenta nuevamente.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+              <a href="${baseUrl}/my-tickets" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Ver Mis Boletos
+              </a>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
+            <p style="text-align: center; color: #6c757d; font-size: 14px;">
+              Si tienes alguna pregunta, no dudes en contactarnos.<br>
+              <strong>Ganaxdar</strong> - La plataforma más segura para rifas de vehículos
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
   }
 
   private generateWinnerNotificationHTML(data: WinnerEmailData): string {
