@@ -15,6 +15,7 @@ import {
   LogOut,
   Car,
   Award,
+  Ticket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,11 @@ const navigation = [
     name: "Rifas",
     href: "/admin/raffles",
     icon: Trophy,
+  },
+  {
+    name: "Tickets",
+    href: "/admin/tickets",
+    icon: Ticket,
   },
   {
     name: "Ganadores",
