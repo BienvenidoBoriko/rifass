@@ -21,7 +21,7 @@ export default function TicketSelector({
   onSelectionChange,
   pricePerTicketUSD = 0,
   pricePerTicketVES = 0,
-  maxTickets = 10,
+  maxTickets = 10000000,
 }: TicketSelectorProps) {
   const addTicket = (ticketNumber: number) => {
     if (selectedTickets.length >= maxTickets) return;
